@@ -1,0 +1,14 @@
+<html>
+<head>
+  <script type="text/javascript" src="lib/JSAN.js"></script>
+  <script type="text/javascript" src="../lib/Gettext.js"></script>
+</head>
+<body>
+<script type="text/javascript">
+    new JSAN("lib").use("Test.Harness.Browser");
+    new Test.Harness.Browser().runTests(
+        'basic.html'
+    );
+</script>
+</body>
+</html>

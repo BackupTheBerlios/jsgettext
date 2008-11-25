@@ -1,0 +1,506 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Gettext - Javascript implemenation of GNU Gettext API.</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:root@localhost" />
+</head>
+
+<body style="background-color: white">
+
+<p><a name="__index__"></a></p>
+<!-- INDEX BEGIN -->
+
+<ul>
+
+	<li><a href="#name">NAME</a></li>
+	<li><a href="#synopsis">SYNOPSIS</a></li>
+	<li><a href="#description">DESCRIPTION</a></li>
+	<li><a href="#install">INSTALL</a></li>
+	<li><a href="#bugs___todo">BUGS / TODO</a></li>
+	<li><a href="#configuration">CONFIGURATION</a></li>
+	<li><a href="#requires">REQUIRES</a></li>
+	<li><a href="#see_also">SEE ALSO</a></li>
+	<li><a href="#author">AUTHOR</a></li>
+</ul>
+<!-- INDEX END -->
+
+<hr />
+<p>
+</p>
+<h1><a name="name">NAME</a></h1>
+<p>Javascript Gettext - Javascript implemenation of GNU Gettext API.</p>
+<p>
+</p>
+<hr />
+<h1><a name="synopsis">SYNOPSIS</a></h1>
+<pre>
+    // //////////////////////////////////////////////////////////
+    // Optimum caching way
+    &lt;script language=&quot;javascript&quot; src=&quot;/path/LC_MESSAGES/myDomain.json&quot;&gt;&lt;/script&gt;
+    &lt;script language=&quot;javascript&quot; src=&quot;/path/Gettext.js'&gt;&lt;/script&gt;</pre>
+<pre>
+    // assuming myDomain.json defines variable json_locale_data
+    var params = {  &quot;domain&quot; : &quot;myDomain&quot;,
+                    &quot;locale_data&quot; : json_locale_data
+                 };
+    var gt = new Gettext(params);
+    // create a shortcut if you'd like
+    function _ (msgid) { return gt.gettext(msgid); }
+    alert(_(&quot;some string&quot;));
+    // or use fully named method
+    alert(gt.gettext(&quot;some string&quot;));</pre>
+<pre>
+    // //////////////////////////////////////////////////////////
+    // The other way to load the language lookup is a &quot;link&quot; tag
+    // Downside is that the data won't be cached
+    // Upside is that it's easy to specify multiple files
+    &lt;link rel=&quot;gettext&quot; uri=&quot;/path/LC_MESSAGES/myDomain.json&quot; /&gt;
+    &lt;script language=&quot;javascript&quot; src=&quot;/path/Gettext.js'&gt;&lt;/script&gt;</pre>
+<pre>
+    var gt = new Gettext('myDomain');
+    // rest is the same</pre>
+<pre>
+    // //////////////////////////////////////////////////////////
+    // The reson the shortcuts aren't exported by default is because they'd be
+    // glued to the single domain you created. So, if you're adding i18n support
+    // to some js library, you should use it as so:</pre>
+<pre>
+    if (typeof(MyNamespace) == 'undefined') MyNamespace = {};
+    MyNamespace.MyClass = function () {
+        var gtParms = { &quot;domain&quot; : 'MyNamespace_MyClass' };
+        this.gt = new Gettext(gtParams);
+        return this;
+    };
+    MyNamespace.MyClass.prototype._ = function (msgid) {
+        return this.gt.gettext(msgid);
+    };
+    MyNamespace.MyClass.prototype.something = function () {
+        var myString = this._(&quot;this will get translated&quot;);
+    };</pre>
+<pre>
+    // //////////////////////////////////////////////////////////
+    // Data structure of the json data
+    // NOTE: if you're loading via the &lt;script&gt; tag, you can only
+    // load one file, but it can contain multiple domains.
+    var json_locale_data = {
+        &quot;MyDomain&quot; : {
+            &quot;&quot; : {
+                &quot;header_key&quot; : &quot;header value&quot;,
+                &quot;header_key&quot; : &quot;header value&quot;,
+            &quot;msgid&quot; : [ &quot;msgid_plural&quot;, &quot;msgstr&quot;, &quot;msgstr_plural&quot;, &quot;msgstr_pluralN&quot; ],
+            &quot;msgctxt\004msgid&quot; : [ &quot;&quot;, &quot;msgstr&quot; ],
+            },
+        &quot;AnotherDomain&quot; : {
+            },
+        }</pre>
+<p>
+</p>
+<hr />
+<h1><a name="description">DESCRIPTION</a></h1>
+<p>This is a javascript implementation of GNU Gettext, providing internationalization support for javascript. It will differ from existing implementations in that it will support all current Gettext features (ex. plural and context support), and will also support loading language catalogs from .mo, .po, or preprocessed json files (converter included).</p>
+<p>
+</p>
+<hr />
+<h1><a name="install">INSTALL</a></h1>
+<p>To install this module, simply copy the file lib/Gettext.js to a web accessable location, and reference it from your application.</p>
+<p>
+</p>
+<hr />
+<h1><a name="bugs___todo">BUGS / TODO</a></h1>
+<dl>
+<dt><strong><a name="item_proprietary_ajax_library_in_use">proprietary ajax library in use</a></strong></dt>
+
+<dd>
+<p>Currently, this uses CCMS.HttpRequest for the ajax calls. As this is a public module, we'll want to remove that dependancy, integrating the code in here, or using a different public library (possible AJAX.js from JSAN).</p>
+</dd>
+<dt><strong><a name="item_ajax_asynx_delay_on_language_file_loading">ajax asynx delay on language file loading</a></strong></dt>
+
+<dd>
+<p>If you load your language files via the &lt;link rel=...&gt; method, which uses ajax to fetch the data, there will be an unknown amount of time between when you first call ``new Gettext'', and when the language has finished loading. If you immediately make a gettext call afterwards, it will likely not have loaded, and your translation will come back w/ the default english text. This is because the ajax call is made asyncronously.</p>
+<p>It's recommended to ues the statically defined &lt;script...&gt; method, but if you insist, you may inspect the value of GettextJsonObject.lang_data_loaded. If true, at least one language file has completely loaded.</p>
+</dd>
+<dt><strong><a name="item_domain_support">domain support</a></strong></dt>
+
+<dd>
+<p>domain support. We need to figure out how we're going to handle that across the board.</p>
+<p>In CCMS, with the i18n calls, they currently do nothing to distinguish between domains. For that, saying ``hey, it's all 'ccms''' may be ok (though zoneinfo would be nice to separate out).</p>
+<p>In javascript, we run into a problem, because the namespace is essentially global. If we create a new i18n object, and use that, then that'd be ok... but that means a different calling convention than everthing else. The problem really lies with making the shortcuts ( <code>_(``str'')</code> or <code>i18n(``str'')</code> ).</p>
+<p>Maybe we can force our apps to do:
+    this.i18n(``str'')</p>
+<p>In our i18n wrapper lib, we could do the API like this:</p>
+<pre>
+    // in some other .js file that needs i18n
+    this.i18nObj = new i18n;
+    this.i18n = this.i18nObj.init('domain');</pre>
+<p>This really goes back to the crazy setup stuff that happens in all of these, and I'm basically trying to reinvent the wheel so it fits in javascript.</p>
+</dd>
+</dl>
+<p>
+</p>
+<hr />
+<h1><a name="configuration">CONFIGURATION</a></h1>
+<p>Configure in one of two ways:
+1. Optimal. Load language definition from statically defined json data.</p>
+<pre>
+    &lt;script language=&quot;javascript&quot; src=&quot;/path/locale/domain.json&quot;&gt;&lt;/script&gt;</pre>
+<pre>
+    // in domain.json
+    json_locale_data = {
+        &quot;mydomain&quot; : {
+            // po header fields
+            &quot;&quot; : {
+                &quot;plural_forms&quot; : &quot;...&quot;,
+                &quot;lang&quot; : &quot;en&quot;,
+                },
+            // all the msgid strings and translations
+            &quot;msgid&quot; : [ &quot;msgid_plural&quot;, &quot;translation&quot;, &quot;plural_translation&quot; ],
+        },
+    };
+    // please see the included po2json script for the details on this format</pre>
+<p>The following methods are implemented:</p>
+<pre>
+    gettext
+    dgettext
+    dcgettext
+    ngettext
+    dngettext
+    dcngettext
+    pgettext
+    dpgettext
+    dcpgettext
+    npgettext
+    dnpgettext
+    dcnpgettext</pre>
+<p>TODO:</p>
+<p>May want to do the textdomain stuff to, and implement it as a multi-level hash in the json files. They'll need namespace either way.</p>
+<p>May want to add encoding/reencoding stuff.</p>
+<p>*/</p>
+<p>// ``domain'' is the Gettext domain, not www.whatev.com. It's usually
+// your applications basename.
+Gettext = function (args) {
+    this.domain      = 'messages';
+    this.locale_data = undefined;
+    this.lang_data_loaded  = false;</p>
+<pre>
+    // set options
+    var options = [ &quot;domain&quot;, &quot;locale_data&quot; ];
+    if (typeof(args) == &quot;object&quot;) {
+        for (var i in args) {
+            for (var j=0; j&lt;options.length; j++) {
+                if (i == options[j]) {
+                    this[i] = args[i];
+                }
+            }
+        }
+    }</pre>
+<pre>
+    // try to load the lang file from somewhere
+    this.try_load_lang();</pre>
+<pre>
+    return this;
+}</pre>
+<p>Gettext.context_glue = ``\004'';</p>
+<p>Gettext.prototype.try_load_lang = <code>function()</code> {
+    if (this.ran_lang_load) return;</p>
+<pre>
+    // check to see if language is statically included
+    if (typeof(this.locale_data) != 'undefined') {
+        // we're going to reformat it, and overwrite the variable
+        var locale_copy = this.locale_data;
+        this.locale_data = undefined;
+        this.parse_locale_data(locale_copy);
+        this.ran_lang_load = 1;
+        this.lang_data_loaded = true;</pre>
+<pre>
+    // try loading from JSON
+    } else {
+        // get lang links
+        var lang_link = this.get_lang_refs();
+        if (typeof(lang_link) == 'object' &amp;&amp; lang_link.length &gt; 0) {
+            // NOTE: there will be a delay here, as this is async.
+            // So, any i18n calls made right after page load may not
+            // get translated.
+            // XXX: we may want to see if we can &quot;fix&quot; this behavior
+            for (var i=0; i&lt;lang_link.length; i++) {
+                this.try_load_lang_json(lang_link[i]);
+            }
+            this.ran_lang_load = 1;
+        } else {
+            this.ran_lang_load = 1;
+        }
+    }
+};</pre>
+<p>// This takes the po2json'd data, and moves it into an internal form
+// for use in our lib, and puts it in our object as:
+//  this.locale_data = {
+//      domain : {
+//          head : { headfield : headvalue },
+//          msgs : {
+//              msgid : [ msgid_plural, msgstr, msgstr_plural ],
+//          },
+Gettext.prototype.parse_locale_data = <code>function(locale_data)</code> {
+    if (typeof(this.locale_data) == 'undefined') {
+        this.locale_data = { };
+    }</p>
+<pre>
+    // suck in every domain defined in the supplied data
+    for (var domain in locale_data) {
+        // skip empty specs
+        if (typeof(locale_data[domain]) == 'undefined') continue;
+        // skip if it has no msgid's
+        var has_msgids = false;
+        for (var msgid in locale_data[domain]) {
+            has_msgids = true;
+            break;
+        }
+        if (! has_msgids) continue;</pre>
+<pre>
+        // grab shortcut to data
+        var data = locale_data[domain];</pre>
+<pre>
+        // if they specifcy a blank domain, default to &quot;messages&quot;
+        if (domain == &quot;&quot;) domain = &quot;messages&quot;;
+        // init the data structure
+        if (typeof(this.locale_data[domain]) == 'undefined') {
+            this.locale_data[domain] = { };
+        }
+        if (typeof(this.locale_data[domain].head) == 'undefined') {
+            this.locale_data[domain].head = { };
+            this.locale_data[domain].msgs = { };
+        }</pre>
+<pre>
+        for (var key in data) {
+            if (key == &quot;&quot;) {
+                var header = data[key];
+                for (var head in header) {
+                    this.locale_data[domain].head[head] = header[head];
+                }
+            } else {
+                this.locale_data[domain].msgs[key] = data[key];
+            }
+        }
+    }</pre>
+<pre>
+    // build the plural forms function
+    for (var domain in this.locale_data) {
+        if (typeof(this.locale_data[domain].head.plural_forms) != 'undefined' &amp;&amp;
+            typeof(this.locale_data[domain].head.plural_func) == 'undefined') {
+            // TODO: this needs fixed up with stuff to build the actual func
+            this.locale_data[domain].head.plural_func = function (n) {
+                var p = (n != 1) ? 1 : 0;
+                return p;
+                };
+        } else if (typeof(this.locale_data[domain].head.plural_func) == 'undefined') {
+            this.locale_data[domain].head.plural_func = function (n) {
+                var p = (n != 1) ? 1 : 0;
+                return p;
+                };
+        } // else, plural_func already created
+    }</pre>
+<pre>
+    return;
+};</pre>
+<p>// XXX: this is going to be a fucking problem.
+// I want this to be a public module, but I need an xmlhttp request
+// feature (I'm using CCMS.HttpRequest). I'll need to replace that
+// with built-in stuff, or use a public module.</p>
+<p>// try_load_lang_json : do an ajaxy call to load in the lang defs
+Gettext.prototype.try_load_lang_json = <code>function(uri)</code> {
+    var params = new Array();
+    params[``async''] = true;
+    params[``baseurl''] = uri;
+    params[``data''] = new Array();
+    var callback = function(xmlhttp, args) {
+// TODO: this is like this because I'm loading from files, not a webserver
+        var ok_status_codes = new Array();
+        ok_status_codes[0] = 0;
+        ok_status_codes[1] = 200;
+        if (xmlhttp.StatusError(ok_status_codes)) {
+            xmlhttp.HandleStatusError();
+            return;
+        }
+        var rv = xmlhttp.JSON();
+        // call back into the calling instance
+        args[``parent''].parse_locale_data(rv);
+        args[``parent''].lang_data_loaded = true;
+    };
+    params[``callback'']      = callback;
+    // pass in our object, so we can call back into this instance.
+    params[``callback_args''] = { ``parent'' : this };
+    var xmlhttp = new CCMS.HttpRequest();
+    xmlhttp.Fetch(params);
+};</p>
+<p>// this finds all &lt;link&gt; tags, filters out ones that match our
+// specs, and returns a list of hashes of those
+Gettext.prototype.get_lang_refs = <code>function()</code> {
+    var langs = new Array();
+    var links = document.getElementsByTagName(``link'');
+    // find all &lt;link&gt; tags in dom; filter ours
+    for (var i=0; i&lt;links.length; i++) {
+        if (links[i].rel == 'gettext' &amp;&amp; links[i].href) {
+            langs.push(links[i].href);
+        }
+    }
+    return langs;
+};</p>
+<p>// gettext
+Gettext.prototype.gettext = function (msgid) {
+    var msgctxt;
+    var msgid_plural;
+    var n;
+    var category;
+    return this.dcnpgettext(undefined, msgctxt, msgid, msgid_plural, n, category);
+};</p>
+<p>Gettext.prototype.dgettext = function (domain, msgid) {
+    var msgctxt;
+    var msgid_plural;
+    var n;
+    var category;
+    return this.dcnpgettext(domain, msgctxt, msgid, msgid_plural, n, category);
+};</p>
+<p>Gettext.prototype.dcgettext = function (domain, msgid, category) {
+    var msgctxt;
+    var msgid_plural;
+    var n;
+    return this.dcnpgettext(domain, msgctxt, msgid, msgid_plural, n, category);
+};</p>
+<p>// ngettext
+Gettext.prototype.ngettext = function (msgid, msgid_plural) {
+    var msgctxt;
+    var category;
+    return this.dcnpgettext(undefined, msgctxt, msgid, msgid_plural, n, category);
+};</p>
+<p>Gettext.prototype.dngettext = function (domain, msgid, msgid_plural) {
+    var msgctxt;
+    var category;
+    return this.dcnpgettext(domain, msgctxt, msgid, msgid_plural, n, category);
+};</p>
+<p>Gettext.prototype.dcngettext = function (domain, msgid, msgid_plural, category) {
+    var msgctxt;
+    return this.dcnpgettext(domain, msgctxt, msgid, msgid_plural, n, category, category);
+};</p>
+<p>// pgettext
+Gettext.prototype.pgettext = function (msgctxt, msgid) {
+    var msgid_plural;
+    var n;
+    var category;
+    return this.dcnpgettext(undefined, msgctxt, msgid, msgid_plural, n, category);
+};</p>
+<p>Gettext.prototype.dpgettext = function (domain, msgctxt, msgid) {
+    var msgid_plural;
+    var n;
+    var category;
+    return this.dcnpgettext(domain, msgctxt, msgid, msgid_plural, n, category);
+};</p>
+<p>Gettext.prototype.dcpgettext = function (domain, msgctxt, msgid, category) {
+    var msgid_plural;
+    var n;
+    return this.dcnpgettext(domain, msgctxt, msgid, msgid_plural, n, category);
+};</p>
+<p>// npgettext
+Gettext.prototype.npgettext = function (msgctxt, msgid, msgid_plural, n) {
+    var category;
+    return this.dcnpgettext(undefined, msgctxt, msgid, msgid_plural, n, category);
+};</p>
+<p>Gettext.prototype.dpgettext = function (domain, msgctxt, msgid, msgid_plural, n) {
+    var category;
+    return this.dcnpgettext(domain, msgctxt, msgid, msgid_plural, n, category);
+};</p>
+<p>// this has all the options, so we use it for all of them.
+Gettext.prototype.dcnpgettext = function (domain, msgctxt, msgid, category, msgid_plural, n, category) {
+    if (typeof(msgid) == 'undefined') return '';</p>
+<pre>
+    var plural = (typeof(msgid_plural) == 'undefined') ? false : true;
+    var msg_ctxt_id = (typeof(msgctxt) == 'undefined') ? msgid :
+                                msgctxt+this.context_glue+msgid;</pre>
+<pre>
+    var domainname = (typeof(domain) != 'undefined')      ? domain :
+                     (typeof(this.domain) != 'undefined') ? this.domain :
+                                                            'messages';</pre>
+<pre>
+    // category is always LC_MESSAGES. We ignore all else
+    var category_name = 'LC_MESSAGES';
+    var category = 5;</pre>
+<pre>
+    var locale_data = new Array();
+    if (typeof(this.locale_data) != 'undefined' &amp;&amp;
+        typeof(this.locale_data[domainname]) != 'undefined') {
+        locale_data.push( this.locale_data[domainname] );</pre>
+<pre>
+    } else {
+        // didn't find domain we're looking for. Search all of them.
+        for (var dom in this.locale_data) {
+            locale_data.push( this.locale_data[dom] );
+        }
+    }</pre>
+<pre>
+    var trans = [];
+    var found = false;
+    var domain_used; // so we can find plural_forms if needed
+    if (locale_data.length) {
+        for (var i=0; i&lt;locale_data.length; i++) {
+            var locale = locale_data[i];
+            if (typeof(locale.msgs[msg_ctxt_id]) != 'undefined') {
+                // make copy of that array (cause we'll be destructive)
+                for (var j=0; j&lt;locale.msgs[msg_ctxt_id].length; j++) {
+                    trans[j] = locale.msgs[msg_ctxt_id][j];
+                }
+                trans.shift(); // throw away the msgid_plural
+                domain_used = locale;
+                found = true;
+                break;
+            }
+        }
+    }</pre>
+<pre>
+    // default to english if we lack a match
+    if (! trans.length) {
+        trans = [ msgid, msgid_plural ];
+    }</pre>
+<pre>
+    var translation = trans[0];
+    if (plural) {
+        var p;
+        if (found) {
+            var rv = domain_used.plural_func(n);
+            if (! rv.plural) rv.plural = 0;
+            if (! rv.nplural) rv.nplural = 0;
+            // if plurals returned is out of bound for total plural forms
+            if (rv.nplural &lt;= rv.plural) rv.plural = 0;
+            p = rv.plural;
+        } else {
+            p = (n != 1) ? 1 : 0;
+        }
+        if (typeof(trans[p]) != 'undefined')
+            translation = trans[p];
+    }</pre>
+<pre>
+    return translation;
+};</pre>
+<p>/* verify that something is an array */
+Gettext.prototype.isArray = function (thisObject) {
+    return this.isValidObject(thisObject) &amp;&amp; thisObject.constructor == Array;
+};</p>
+<p>/*</p>
+<p>
+</p>
+<hr />
+<h1><a name="requires">REQUIRES</a></h1>
+<p>po2json requires perl, and the perl modules Locale::PO and JSON.</p>
+<p>
+</p>
+<hr />
+<h1><a name="see_also">SEE ALSO</a></h1>
+<p>Locale::gettext_pp(3pm), POSIX(3pm), gettext(1), <code>gettext(3)</code></p>
+<p>
+</p>
+<hr />
+<h1><a name="author">AUTHOR</a></h1>
+<p>Copyright (C) 2008, Joshua I. Miller &lt;<a href="mailto:unrtst@gmail.com">unrtst@gmail.com</a>&gt;, all rights reserved. See the source code for details.</p>
+<p>*/</p>
+
+</body>
+
+</html>

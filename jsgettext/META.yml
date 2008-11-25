@@ -1,0 +1,7 @@
+---
+name: Gettext.JSON
+version: 0.01
+author:
+  - Joshua I. Miller <jmiller@purifieddata.net>
+abstract: GNU Gettext API implemented in javascript that sources json files.
+license: artistic

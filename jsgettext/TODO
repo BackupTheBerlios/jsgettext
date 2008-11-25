@@ -1,0 +1,10 @@
+make init method.
+It should run onload
+try: load language from included js script
+try: load language from <link ...>
+    don't load a language.
+
+i18n calls should NOT try to load the language, but simply translate
+if there is a translation, or return the english otherwise.
+
+
