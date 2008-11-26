@@ -99,6 +99,10 @@ To install this module, simply copy the file lib/Gettext.js to a web accessable 
 
 =over
 
+=item error handling
+
+Currently, there are several places that throw errors. In GNU Gettext, there are no fatal errors, which allows text to still be displayed regardless of how broken the environment becomes. We should evaluate and determine where we want to stand on that issue.
+
 =item proprietary ajax library in use
 
 Currently, this uses CCMS.HttpRequest for the ajax calls. As this is a public module, we'll want to remove that dependancy, integrating the code in here, or using a different public library (possible AJAX.js from JSAN).
@@ -142,7 +146,7 @@ Configure in one of two ways:
         "mydomain" : {
             // po header fields
             "" : {
-                "plural_forms" : "...",
+                "plural-forms" : "...",
                 "lang" : "en",
                 },
             // all the msgid strings and translations
@@ -172,13 +176,53 @@ May want to do the textdomain stuff to, and implement it as a multi-level hash i
 
 May want to add encoding/reencoding stuff.
 
+
+=head2 new Gettext (args)
+
+Several methods of loading locale data are included. You may specify a plugin or alternative method of loading data by passing the data in as the "locale_data" option. For example:
+
+    var get_locale_data = function () {
+        // plugin does whatever to populate locale_data
+        return locale_data;
+    };
+    var gt = new Gettext( 'domain' : 'messages',
+                          'locale_data' : get_locale_data() );
+
+The above can also be used if locale data is specified in a statically included <SCRIPT> tag. Just specify the variable name in the call to new. Ex:
+
+    var gt = new Gettext( 'domain' : 'messages',
+                          'locale_data' : json_locale_data_variable );
+
+Finally, you may load the locale data by referencing it in a <LINK> tag. Simply exclude the 'locale_data' option, and all <LINK rel="gettext" ...> items will be tried. The <LINK> should be specified as:
+
+    <link rel="gettext" type="application/json" url="/path/to/file.json">
+    <link rel="gettext" type="text/javascript"  url="/path/to/file.json">
+    <link rel="gettext" type="application/x-po" url="/path/to/file.po">
+    <link rel="gettext" type="application/x-mo" url="/path/to/file.mo">
+
+args:
+
+=over
+
+=item domain
+
+The Gettext domain, not www.whatev.com. It's usually your applications basename. If the .po file was "myapp.po", this would be "myapp".
+
+=item locale_data
+
+Raw locale data (in json structure). If specified, from_link data will be ignored.
+
+=back
+
+=cut
+
 */
 
-// "domain" is the Gettext domain, not www.whatev.com. It's usually
-// your applications basename.
 Gettext = function (args) {
-    this.domain      = 'messages';
-    this.locale_data = undefined;
+    this.domain         = 'messages';
+    // locale_data will be populated from <link...> if not specified in args
+    this.locale_data    = undefined;
+
     this.lang_data_loaded  = false;
 
     // set options
@@ -192,6 +236,7 @@ Gettext = function (args) {
             }
         }
     }
+
 
     // try to load the lang file from somewhere
     this.try_load_lang();
@@ -210,6 +255,11 @@ Gettext.prototype.try_load_lang = function() {
         var locale_copy = this.locale_data;
         this.locale_data = undefined;
         this.parse_locale_data(locale_copy);
+
+        if (typeof(this.locale_data[this.domain]) == 'undefined') {
+            throw new Error("Error: Gettext 'locale_data' does not contain the domain '"+this.domain+"'");
+        }
+
         this.ran_lang_load = 1;
         this.lang_data_loaded = true;
 
@@ -217,17 +267,26 @@ Gettext.prototype.try_load_lang = function() {
     } else {
         // get lang links
         var lang_link = this.get_lang_refs();
+
         if (typeof(lang_link) == 'object' && lang_link.length > 0) {
             // NOTE: there will be a delay here, as this is async.
             // So, any i18n calls made right after page load may not
             // get translated.
             // XXX: we may want to see if we can "fix" this behavior
             for (var i=0; i<lang_link.length; i++) {
-                this.try_load_lang_json(lang_link[i]);
+                var link = lang_link[i];
+                if (link.type == 'application/json') {
+                    if (! this.try_load_lang_json(link.href) ) {
+                        throw new Error("Error: Gettext 'try_load_lang_json' failed. Unable to exec xmlhttprequest for link ["+link.href+"]");
+                    }
+                } else {
+                    // TODO: implement the other types (po/mo)
+                    throw new Error("TODO: link type ["+link.type+"] found, and support is planned, but not implemented at this time.");
+                }
             }
             this.ran_lang_load = 1;
         } else {
-            this.ran_lang_load = 1;
+            this.ran_lang_load = 0;
         }
     }
 };
@@ -285,13 +344,26 @@ Gettext.prototype.parse_locale_data = function(locale_data) {
 
     // build the plural forms function
     for (var domain in this.locale_data) {
-        if (typeof(this.locale_data[domain].head.plural_forms) != 'undefined' &&
+        if (typeof(this.locale_data[domain].head['plural-forms']) != 'undefined' &&
             typeof(this.locale_data[domain].head.plural_func) == 'undefined') {
-            // TODO: this needs fixed up with stuff to build the actual func
-            this.locale_data[domain].head.plural_func = function (n) {
-                var p = (n != 1) ? 1 : 0;
-                return p;
-                };
+            // untaint data
+            var plural_forms = this.locale_data[domain].head['plural-forms'];
+            var pf_re = new RegExp('^(\\s*nplurals\\s*=\\s*[0-9]+\\s*;\\s*plural\\s*=\\s*(?:\\s|[-\\?\\|&=!<>+*/%:;a-zA-Z0-9_\(\)])+)', 'm');
+            if (pf_re.test(plural_forms)) {
+                //ex english: "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+                //pf = "nplurals=2; plural=(n != 1);";
+                //ex russian: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10< =4 && (n%100<10 or n%100>=20) ? 1 : 2)
+                //pf = "nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2)";
+
+                var pf = this.locale_data[domain].head['plural-forms'];
+                if (! /;\s*$/.test(pf)) pf = pf.concat(';');
+                var code = 'function (n) { var plural; var nplurals; '+pf+' return (nplurals, plural === true ? 1 : plural ? plural : 0); };';
+                this.locale_data[domain].head.plural_func = eval(code);
+            } else {
+                throw new Error("Syntax error in language file. Plural-Forms header is invalid ["+plural_forms+"]");
+            }   
+
+        // default to english plural form
         } else if (typeof(this.locale_data[domain].head.plural_func) == 'undefined') {
             this.locale_data[domain].head.plural_func = function (n) {
                 var p = (n != 1) ? 1 : 0;
@@ -334,6 +406,7 @@ Gettext.prototype.try_load_lang_json = function(uri) {
     params["callback_args"] = { "parent" : this };
     var xmlhttp = new CCMS.HttpRequest();
     xmlhttp.Fetch(params);
+    return 1;
 };
 
 // this finds all <link> tags, filters out ones that match our
@@ -344,7 +417,35 @@ Gettext.prototype.get_lang_refs = function() {
     // find all <link> tags in dom; filter ours
     for (var i=0; i<links.length; i++) {
         if (links[i].rel == 'gettext' && links[i].href) {
-            langs.push(links[i].href);
+            if (typeof(links[i].type) == 'undefined' ||
+                links[i].type == '') {
+                if (/\.json$/i.test(links[i].href)) {
+                    links[i].type = 'application/json';
+                } else if (/\.js$/i.test(links[i].href)) {
+                    links[i].type = 'application/json';
+                } else if (/\.po$/i.test(links[i].href)) {
+                    links[i].type = 'application/x-po';
+                } else if (/\.mo$/i.test(links[i].href)) {
+                    links[i].type = 'application/x-mo';
+                } else {
+                    throw new Error("LINK tag with rel=gettext found, but the type and extension are unrecognized.");
+                }
+            }
+
+            links[i].type = links[i].type.toLowerCase();
+            if (links[i].type == 'application/json') {
+                links[i].type = 'application/json';
+            } else if (links[i].type == 'text/javascript') {
+                links[i].type = 'application/json';
+            } else if (links[i].type == 'application/x-po') {
+                links[i].type = 'application/x-po';
+            } else if (links[i].type == 'application/x-mo') {
+                links[i].type = 'application/x-mo';
+            } else {
+                throw new Error("LINK tag with rel=gettext found, but the type attribute ["+links[i].type+"] is unrecognized.");
+            }
+
+            langs.push(links[i]);
         }
     }
     return langs;
@@ -455,7 +556,7 @@ Gettext.prototype.dcnpgettext = function (domain, msgctxt, msgid, category, msgi
 
     var trans = [];
     var found = false;
-    var domain_used; // so we can find plural_forms if needed
+    var domain_used; // so we can find plural-forms if needed
     if (locale_data.length) {
         for (var i=0; i<locale_data.length; i++) {
             var locale = locale_data[i];
@@ -519,3 +620,5 @@ Locale::gettext_pp(3pm), POSIX(3pm), gettext(1), gettext(3)
 Copyright (C) 2008, Joshua I. Miller E<lt>unrtst@gmail.comE<gt>, all rights reserved. See the source code for details.
 
 */
+
+//        throw new Error("Error: Gettext 'locale_data' does not contain the domain '"+this.domain+"'");
