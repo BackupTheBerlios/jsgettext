@@ -1,0 +1,22 @@
+<head>
+    <link rel="gettext" type="application/json" href="01gettext_messages.json" />
+    <script type="text/javascript" src="./lib/JSAN.js"></script>
+    <script type="text/javascript" src="../lib/Gettext.js"></script>
+</head>
+<body>
+<pre id="test"><script type="text/javascript">
+
+new JSAN('./lib').use('Test.More');
+plan({tests: 4});
+
+ok(typeof(Gettext) != 'undefined');
+
+var gt = new Gettext({ 'domain' : 'messages' });
+ok(typeof(gt) != 'undefined');
+
+is(gt.gettext('test'), 'XXtestXX', "test translation is XXtestXX");
+
+is(gt.gettext('Not translated'), 'Not translated', "untranslated strings pass through");
+
+</script></pre>
+</body>

@@ -10,6 +10,11 @@ Makefile
 MANIFEST
 META.yml
 README
+tests/00gettext_init.t.js
+tests/00gettext.t.js
+tests/01gettext_json.t.html
+tests/01gettext_messages.json
+tests/01gettext.t.js
 tests/basic.html
 tests/index.html
 tests/lib/Ajax.js

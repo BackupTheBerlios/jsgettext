@@ -6,7 +6,11 @@
 <body>
 <script type="text/javascript">
     new JSAN("lib").use("Test.Harness.Browser");
-    new Test.Harness.Browser().runTests(
+    new Test.Harness.Browser('./lib/JSAN.js').runTests(
+        '00gettext.t.js',
+        '00gettext_init.t.js',
+        '01gettext.t.js',
+        '01gettext_json.t.html',
         'basic.html'
     );
 </script>

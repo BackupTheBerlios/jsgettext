@@ -6,8 +6,13 @@
 <pre>
     <script type="text/javascript">
         new JSAN('../lib').use('Gettext');
-        new JSAN('lib').use('Test.More');
-
+//        new JSAN('lib').use('Test.More');
+new JSAN('./lib').use('Test.More');
+plan({tests: 2});
+var xx = "blah";
+is("blah", xx, "xx is blah");
+var xxx = "blahx";
+is("blahx", xxx, "xxx is blahx");
     </script>
 </pre>
 </body>
