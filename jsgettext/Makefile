@@ -6,7 +6,7 @@ readme:
 	perldoc -t lib/Gettext.js > README
 
 manifest:
-	find . -type f ! -name '*.bak' | perl -pe 's/..//' | sort > MANIFEST
+	find . -type f ! -name '*.bak' | grep -v CVS | perl -pe 's/..//' | sort > MANIFEST
 
 dist: doc readme manifest META.yml
 	H=`pwd`; \
