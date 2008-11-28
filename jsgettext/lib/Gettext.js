@@ -283,6 +283,10 @@ Gettext.prototype.try_load_lang = function() {
                     if (! this.try_load_lang_json(link.href) ) {
                         throw new Error("Error: Gettext 'try_load_lang_json' failed. Unable to exec xmlhttprequest for link ["+link.href+"]");
                     }
+                } else if (link.type == 'application/x-po') {
+                    if (! this.try_load_lang_po(link.href) ) {
+                        throw new Error("Error: Gettext 'try_load_lang_po' failed. Unable to exec xmlhttprequest for link ["+link.href+"]");
+                    }
                 } else {
                     // TODO: implement the other types (po/mo)
                     throw new Error("TODO: link type ["+link.type+"] found, and support is planned, but not implemented at this time.");
@@ -378,6 +382,181 @@ Gettext.prototype.parse_locale_data = function(locale_data) {
     }
 
     return;
+};
+
+
+// try_load_lang_po : do an ajaxy call to load in the .po lang defs
+Gettext.prototype.try_load_lang_po = function(uri) {
+    var data = this.sjax(uri);
+    if (! data) return;
+
+    var domain = this.uri_basename(uri);
+
+    var rv = this.parse_po(data);
+
+    // munge domain into/outof header
+    if (rv && ! rv[""]) rv[""] = {};
+    if (rv && rv[""] && ! rv[""]["domain"]) rv[""]["domain"] = domain;
+    if (rv && rv[""] && rv[""]["domain"]) domain = rv[""]["domain"];
+
+    this.parse_locale_data({ domain : rv });
+    this.lang_data_loaded = true;
+
+    return 1;
+};
+
+Gettext.prototype.uri_basename = function(uri) {
+    var rv;
+    if (rv = uri.match(/^(.*\/)?(.*)/)) {
+        return rv[2];
+    } else {
+        return "";
+    }
+};
+
+Gettext.prototype.parse_po = function(data) {
+    var rv = {};
+    var buffer = {};
+    var lastbuffer = "";
+    var errors = [];
+    var lines = data.split("\n");
+    for (var i=0; i<lines.length; i++) {
+        // chomp
+        lines[i] = lines[i].replace(/(\n|\r)+$/, '');
+
+        var match;
+
+        // Empty line / End of an entry.
+        if (/^$/.test(lines[i])) {
+            if (buffer['msgid'] && buffer['msgid'].length) {
+                var msg_ctxt_id = (typeof(buffer['msgctxt']) != 'undefined' && buffer['msgctxt'].length) ? buffer['msgctxt']+this.context_glue+buffer['msgid'] : buffer['msgid'];
+                var values = [];
+                var msgid_plural = (typeof(buffer['msgid_plural']) != 'undefined' && buffer['msgid_plural'].length) ? buffer['msgid_plural'] : undefined;
+                values.push(msgid_plural);
+
+                // find msgstr_* translations and push them on
+                var trans = [];
+                for (var str in buffer) {
+                    var match;
+                    if (match = str.match(/^msgstr_(\d+)/))
+                        trans[match[1]] = buffer[str];
+                }
+                values.push(trans);
+
+                // only add it if we've got a translation
+                // NOTE: this doesn't conform to msgfmt specs
+                if (trans.length) rv[msg_ctxt_id] = values;
+
+                buffer = {};
+                lastbuffer = "";
+            }
+
+        // comments
+        } else if (/^#/.test(lines[i])) {
+            continue;
+
+        // msgctxt
+        } else if (match = lines[i].match(/^msgctxt\s+(.*)/)) {
+            lastbuffer = 'msgctxt';
+            buffer[lastbuffer] = this.parse_po_dequote(match[1]);
+
+        // msgid
+        } else if (match = lines[i].match(/^msgid\s+(.*)/)) {
+            lastbuffer = 'msgid';
+            buffer[lastbuffer] = this.parse_po_dequote(match[1]);
+
+        // msgid_plural
+        } else if (match = lines[i].match(/^msgid_plural\s+(.*)/)) {
+            lastbuffer = 'msgid_plural';
+            buffer[lastbuffer] = this.parse_po_dequote(match[1]);
+
+        // msgstr
+        } else if (match = lines[i].match(/^msgstr\s+(.*)/)) {
+            lastbuffer = 'msgstr_0';
+            buffer[lastbuffer] = this.parse_po_dequote(match[1]);
+
+        // msgstr[0] (treak like msgstr)
+        } else if (match = lines[i].match(/^msgstr\[0\]\s+(.*)/)) {
+            lastbuffer = 'msgstr_0';
+            buffer[lastbuffer] = this.parse_po_dequote(match[1]);
+
+        // msgstr[n]
+        } else if (match = lines[i].match(/^msgstr\[(\d+)\]\s+(.*)/)) {
+            lastbuffer = 'msgstr_'+match[1];
+            buffer[lastbuffer] = this.parse_po_dequote(match[2]);
+
+        // continued string
+        } else if (/^"/.test(lines[i])) {
+            buffer[lastbuffer] += this.parse_po_dequote(lines[i]);
+
+        // something strange
+        } else {
+            errors.push("Strange line ["+i+"] : "+lines[i]);
+        }
+    }
+
+
+    if (buffer['msgid'] && buffer['msgid'].length) {
+        var msg_ctxt_id = (typeof(buffer['msgctxt']) != 'undefined' && buffer['msgctxt'].length) ? buffer['msgctxt']+this.context_glue+buffer['msgid'] : buffer['msgid'];
+        var values = [];
+        var msgid_plural = (typeof(buffer['msgid_plural']) != 'undefined' && buffer['msgid_plural'].length) ? buffer['msgid_plural'] : undefined;
+        values.push(msgid_plural);
+
+        // find msgstr_* translations and push them on
+        var trans = [];
+        for (var str in buffer) {
+            var match;
+            if (match = str.match(/^msgstr_(\d+)/))
+                trans[match[1]] = buffer[str];
+        }
+        values.push(trans);
+
+        // only add it if we've got a translation
+        // NOTE: this doesn't conform to msgfmt specs
+        if (trans.length) rv[msg_ctxt_id] = values;
+
+        buffer = {};
+        lastbuffer = "";
+    }
+
+
+    // parse out the header
+    if (rv[""]) {
+        var cur = {};
+        var hlines = rv[""].split(/\\n/);
+        for (var i=0; i<hlines.length; i++) {
+            if (! hlines.length) continue;
+
+            var h = hlines[i].split(':', 2);
+
+            if (cur[h[0]] && cur[h[0]].length) {
+                errors.push("SKIPPING DUPLICATE HEADER LINE: "+hlines[i]);
+            } else if (/#-#-#-#-#/.test(h[0])) {
+                errors.push("SKIPPING ERROR MARKER IN HEADER: "+hlines[i]);
+            } else if (h.length == 2) {
+                cur[h[0]] = h[1];
+            } else {
+                errors.push("PROBLEM LINE IN HEADER: "+hlines[i]);
+                cur[h[0]] = '';
+            }
+        }
+
+        // replace header string with assoc array
+        rv[""] = cur;
+    }
+
+
+    return rv;
+};
+
+
+Gettext.prototype.parse_po_dequote = function(str) {
+    var match;
+    if (match = str.match(/^"(.*)"/)) {
+        str = match[1];
+    }
+    str = str.replace(/\\"/, "");
+    return str;
 };
 
 

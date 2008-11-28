@@ -1,5 +1,5 @@
 new JSAN('./lib').use('Test.More');
-plan({tests: 2});
+plan({tests: 3});
 
 JSAN.addRepository('../lib').use('Gettext');
 
@@ -16,6 +16,8 @@ var json_locale_data = {
     
 ok(typeof(Gettext) != 'undefined');
 
-var gt = new Gettext({ 'domain' : 'messages', 'locale_data' : json_locale_data });
-ok(typeof(gt) != 'undefined');
+try { var gt = new Gettext({ 'domain' : 'messages', 'locale_data' : json_locale_data }); ok(1, 'initialized'); }
+catch (e) { ok(0, 'initialize:'+e); }
+
+ok(typeof(gt) != 'undefined', 'Gettext object created');
 
