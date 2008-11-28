@@ -38,6 +38,9 @@ Javascript Gettext - Javascript implemenation of GNU Gettext API.
  alert(_("some string"));
  // or use fully named method
  alert(gt.gettext("some string"));
+ // change to use a different "domain"
+ gt.textdomain("anotherDomain");
+ alert(gt.gettext("some string"));
 
 
  // //////////////////////////////////////////////////////////
@@ -167,6 +170,7 @@ Supported external formats are:
 The following methods are implemented:
 
     new Gettext(args)
+    textdomain
     gettext
     dgettext
     dcgettext
@@ -622,6 +626,35 @@ Gettext.prototype.get_lang_refs = function() {
 };
 
 
+/*
+
+=head2 textdomain( domain )
+
+et domain for future gettext() calls
+
+A  message  domain  is  a  set of translatable msgid messages. Usually,
+every software package has its own message domain. The domain  name  is
+used to determine the message catalog where a translation is looked up;
+it must be a non-empty string.
+
+The current message domain is used by the gettext, ngettext, pgettext,
+npgettext functions, and by the dgettext, dcgettext, dngettext, dcngettext,
+dpgettext, dcpgettext, dnpgettext and dcnpgettext functions when called
+with a NULL domainname argument.
+
+If domainname is not NULL, the current message domain is set to domain‐
+name.
+
+If domainname is undefined, null, or empty string, the function returns
+the current message domain.
+
+*/
+Gettext.prototype.textdomain = function (domain) {
+    var cur = this.domain;
+    if (domain && domain.length) this.domain = domain;
+    return cur;
+}
+
 // gettext
 Gettext.prototype.gettext = function (msgid) {
     var msgctxt;
@@ -816,6 +849,12 @@ Gettext.prototype.JSON = function (data) {
 =head1 BUGS / TODO
 
 =over
+
+=item locale caching
+
+This is currently done object-wide.
+
+We should consider making this a class-wide cache, so that multiple instances of Gettext would share the same cache (especially since we load nearly all available/found stuff).
 
 =item error handling
 
