@@ -1,5 +1,5 @@
 <head>
-    <link rel="gettext" type="application/x-po" href="LC_MESSAGES/01gettext_messages.po" />
+    <link rel="gettext" type="application/json" href="LC_MESSAGES/domain_multi.json" />
     <script type="text/javascript" src="./lib/JSAN.js"></script>
     <script type="text/javascript" src="../lib/Gettext.js"></script>
 </head>
@@ -7,7 +7,7 @@
 <pre id="test"><script type="text/javascript">
 
 new JSAN('./lib').use('Test.More');
-plan({tests: 5});
+plan({tests: 9});
 
 ok(typeof(Gettext) != 'undefined');
 
@@ -18,6 +18,16 @@ ok(typeof(gt) != 'undefined', 'Gettext object created');
 is(gt.gettext('test'), 'XXtestXX', "test translation is XXtestXX");
 
 is(gt.gettext('Not translated'), 'Not translated', "untranslated strings pass through");
+
+
+// try the other domain
+try { var gt2 = new Gettext({ 'domain' : 'messages2' }); ok(1, 'initialize'); }
+catch (e) { ok(0, 'initialize:'+e); }
+ok(typeof(gt2) != 'undefined', 'Gettext object created');
+
+is(gt2.gettext('test'), '22test22', "test translation is 22test22");
+
+is(gt2.gettext('Not translated'), 'Not translated', "untranslated strings pass through");
 
 </script></pre>
 </body>

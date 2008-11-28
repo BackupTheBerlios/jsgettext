@@ -1,0 +1,18 @@
+ {
+'messages' : {
+    '' : { 
+        'domain'        : 'messages',
+        'lang'          : 'en',
+        'plural-forms'  : "nplurals=2; plural=(n != 1);"
+        },
+    'test' : [ 'undefined', 'XXtestXX' ],
+    },
+'messages2' : {
+    '' : { 
+        'domain'        : 'messages2',
+        'lang'          : 'en',
+        'plural-forms'  : "nplurals=2; plural=(n != 1);"
+        },
+    'test' : [ 'undefined', '22test22' ],
+    }
+}  
