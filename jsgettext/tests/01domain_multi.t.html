@@ -7,7 +7,7 @@
 <pre id="test"><script type="text/javascript">
 
 new JSAN('./lib').use('Test.More');
-plan({tests: 12});
+plan({tests: 13});
 
 ok(typeof(Gettext) != 'undefined');
 
@@ -31,7 +31,8 @@ is(gt2.gettext('Not translated'), 'Not translated', "untranslated strings pass t
 
 
 // try switching domains on same object
-ok(gt.textdomain('messages2') == 'messages', 'textdomain call');
+ok(gt.textdomain() == 'messages', 'textdomain call');
+ok(gt.textdomain('messages2') == 'messages2', 'textdomain call');
 ok(gt.textdomain() == 'messages2', 'textdomain call succeeded');
 is(gt.gettext('test'), '22test22', "test translation is 22test22");
 

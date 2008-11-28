@@ -648,11 +648,14 @@ name.
 If domainname is undefined, null, or empty string, the function returns
 the current message domain.
 
+If  successful,  the  textdomain  function  returns the current message
+domain, after possibly changing it. (ie. if you set a new domain, the 
+value returned will NOT be the previous domain).
+
 */
 Gettext.prototype.textdomain = function (domain) {
-    var cur = this.domain;
     if (domain && domain.length) this.domain = domain;
-    return cur;
+    return this.domain;
 }
 
 // gettext
@@ -855,6 +858,12 @@ Gettext.prototype.JSON = function (data) {
 This is currently done object-wide.
 
 We should consider making this a class-wide cache, so that multiple instances of Gettext would share the same cache (especially since we load nearly all available/found stuff).
+
+One issue here is that we'll need to change the way we're dealing with tracking "loaded". Currently, every call to new() resets that stuff. We'd have to stop doing that, and append everywhere. This is definitely possible, but will take some fiddling around.
+
+Should cache in:
+
+    Gettext.locale_data = { };
 
 =item error handling
 
