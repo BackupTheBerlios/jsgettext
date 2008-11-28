@@ -391,16 +391,19 @@ Gettext.prototype.try_load_lang_po = function(uri) {
     if (! data) return;
 
     var domain = this.uri_basename(uri);
+    var parsed = this.parse_po(data);
 
-    var rv = this.parse_po(data);
-
+    var rv = {};
     // munge domain into/outof header
-    if (rv && ! rv[""]) rv[""] = {};
-    if (rv && rv[""] && ! rv[""]["domain"]) rv[""]["domain"] = domain;
-    if (rv && rv[""] && rv[""]["domain"]) domain = rv[""]["domain"];
+    if (parsed) {
+        if (! parsed[""]) parsed[""] = {};
+        if (! parsed[""]["domain"]) parsed[""]["domain"] = domain;
+        domain = parsed[""]["domain"];
+        rv[domain] = parsed;
 
-    this.parse_locale_data({ domain : rv });
-    this.lang_data_loaded = true;
+        this.parse_locale_data(rv);
+        this.lang_data_loaded = true;
+    }
 
     return 1;
 };
@@ -408,7 +411,11 @@ Gettext.prototype.try_load_lang_po = function(uri) {
 Gettext.prototype.uri_basename = function(uri) {
     var rv;
     if (rv = uri.match(/^(.*\/)?(.*)/)) {
-        return rv[2];
+        var ext_strip;
+        if (ext_strip = rv[2].match(/^(.*)\..+$/))
+            return ext_strip[1];
+        else
+            return rv[2];
     } else {
         return "";
     }
@@ -428,24 +435,22 @@ Gettext.prototype.parse_po = function(data) {
 
         // Empty line / End of an entry.
         if (/^$/.test(lines[i])) {
-            if (buffer['msgid'] && buffer['msgid'].length) {
+            if (typeof(buffer['msgid']) != 'undefined') {
                 var msg_ctxt_id = (typeof(buffer['msgctxt']) != 'undefined' && buffer['msgctxt'].length) ? buffer['msgctxt']+this.context_glue+buffer['msgid'] : buffer['msgid'];
-                var values = [];
                 var msgid_plural = (typeof(buffer['msgid_plural']) != 'undefined' && buffer['msgid_plural'].length) ? buffer['msgid_plural'] : undefined;
-                values.push(msgid_plural);
 
                 // find msgstr_* translations and push them on
                 var trans = [];
                 for (var str in buffer) {
                     var match;
                     if (match = str.match(/^msgstr_(\d+)/))
-                        trans[match[1]] = buffer[str];
+                        trans[parseInt(match[1])] = buffer[str];
                 }
-                values.push(trans);
+                trans.unshift(msgid_plural);
 
                 // only add it if we've got a translation
                 // NOTE: this doesn't conform to msgfmt specs
-                if (trans.length) rv[msg_ctxt_id] = values;
+                if (trans.length) rv[msg_ctxt_id] = trans;
 
                 buffer = {};
                 lastbuffer = "";
@@ -498,22 +503,20 @@ Gettext.prototype.parse_po = function(data) {
 
     if (buffer['msgid'] && buffer['msgid'].length) {
         var msg_ctxt_id = (typeof(buffer['msgctxt']) != 'undefined' && buffer['msgctxt'].length) ? buffer['msgctxt']+this.context_glue+buffer['msgid'] : buffer['msgid'];
-        var values = [];
         var msgid_plural = (typeof(buffer['msgid_plural']) != 'undefined' && buffer['msgid_plural'].length) ? buffer['msgid_plural'] : undefined;
-        values.push(msgid_plural);
 
         // find msgstr_* translations and push them on
         var trans = [];
         for (var str in buffer) {
             var match;
             if (match = str.match(/^msgstr_(\d+)/))
-                trans[match[1]] = buffer[str];
+                trans[parseInt(match[1])] = buffer[str];
         }
-        values.push(trans);
+        trans.unshift(msgid_plural);
 
         // only add it if we've got a translation
         // NOTE: this doesn't conform to msgfmt specs
-        if (trans.length) rv[msg_ctxt_id] = values;
+        if (trans.length) rv[msg_ctxt_id] = trans;
 
         buffer = {};
         lastbuffer = "";
@@ -521,30 +524,34 @@ Gettext.prototype.parse_po = function(data) {
 
 
     // parse out the header
-    if (rv[""]) {
+    if (rv[""] && rv[""][1]) {
         var cur = {};
-        var hlines = rv[""].split(/\\n/);
+        var hlines = rv[""][1].split(/\\n/);
         for (var i=0; i<hlines.length; i++) {
             if (! hlines.length) continue;
 
             var h = hlines[i].split(':', 2);
+            var hlow = h[0].toLowerCase();
 
-            if (cur[h[0]] && cur[h[0]].length) {
+            if (cur[hlow] && cur[hlow].length) {
                 errors.push("SKIPPING DUPLICATE HEADER LINE: "+hlines[i]);
-            } else if (/#-#-#-#-#/.test(h[0])) {
+            } else if (/#-#-#-#-#/.test(hlow)) {
                 errors.push("SKIPPING ERROR MARKER IN HEADER: "+hlines[i]);
             } else if (h.length == 2) {
-                cur[h[0]] = h[1];
+                // remove begining spaces if any
+                var val = h[1].replace(/^\s+/, '');
+                cur[hlow] = val;
             } else {
                 errors.push("PROBLEM LINE IN HEADER: "+hlines[i]);
-                cur[h[0]] = '';
+                cur[hlow] = '';
             }
         }
 
         // replace header string with assoc array
         rv[""] = cur;
+    } else {
+        rv[""] = {};
     }
-
 
     return rv;
 };
