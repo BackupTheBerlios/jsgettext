@@ -1,6 +1,6 @@
 /*
 Pure Javascript implementation of Uniforum message translation.
-Copyright (C) 2008 Joshua I. Miller <unrtst@gmail.com>, all rights reserved
+Copyright (C) 2008 Joshua I. Miller <unrtst@cpan.org>, all rights reserved
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the GNU Library General Public License as published
@@ -99,7 +99,7 @@ Javascript Gettext - Javascript implemenation of GNU Gettext API.
 
 =head1 DESCRIPTION
 
-This is a javascript implementation of GNU Gettext, providing internationalization support for javascript. It will differ from existing implementations in that it will support all current Gettext features (ex. plural and context support), and will also support loading language catalogs from .mo, .po, or preprocessed json files (converter included).
+This is a javascript implementation of GNU Gettext, providing internationalization support for javascript. It differs from existing javascript implementations in that it will support all current Gettext features (ex. plural and context support), and will also support loading language catalogs from .mo, .po, or preprocessed json files (converter included).
 
 The locale initialization differes from that of GNU Gettext / POSIX. Rather than setting the category, domain, and paths, and letting the libs find the right file, you must explicitly load the file at some point. The "domain" will still be honored. Future versions may be expanded to include support for set_locale like features.
 
@@ -135,9 +135,9 @@ Configure in one of two ways:
 
 This method also allows you to use unsupported file formats, so long as you can parse them into the above format.
 
-=item 2. Use an AJAX to load language file.
+=item 2. Use AJAX to load language file.
 
-Use AJAX (actually, SJAX - syncronous) to load an external resource.
+Use XMLHttpRequest (actually, SJAX - syncronous) to load an external resource.
 
 Supported external formats are:
 
@@ -231,8 +231,6 @@ Gettext = function (args) {
     // locale_data will be populated from <link...> if not specified in args
     this.locale_data    = undefined;
 
-    this.lang_data_loaded  = false;
-
     // set options
     var options = [ "domain", "locale_data" ];
     if (typeof(args) == "object") {
@@ -253,10 +251,9 @@ Gettext = function (args) {
 }
 
 Gettext.context_glue = "\004";
+Gettext._locale_data = {};
 
 Gettext.prototype.try_load_lang = function() {
-    if (this.ran_lang_load) return;
-
     // check to see if language is statically included
     if (typeof(this.locale_data) != 'undefined') {
         // we're going to reformat it, and overwrite the variable
@@ -264,56 +261,50 @@ Gettext.prototype.try_load_lang = function() {
         this.locale_data = undefined;
         this.parse_locale_data(locale_copy);
 
-        if (typeof(this.locale_data[this.domain]) == 'undefined') {
+        if (typeof(Gettext._locale_data[this.domain]) == 'undefined') {
             throw new Error("Error: Gettext 'locale_data' does not contain the domain '"+this.domain+"'");
         }
+    }
 
-        this.ran_lang_load = 1;
-        this.lang_data_loaded = true;
 
     // try loading from JSON
-    } else {
-        // get lang links
-        var lang_link = this.get_lang_refs();
+    // get lang links
+    var lang_link = this.get_lang_refs();
 
-        if (typeof(lang_link) == 'object' && lang_link.length > 0) {
-            // NOTE: there will be a delay here, as this is async.
-            // So, any i18n calls made right after page load may not
-            // get translated.
-            // XXX: we may want to see if we can "fix" this behavior
-            for (var i=0; i<lang_link.length; i++) {
-                var link = lang_link[i];
-                if (link.type == 'application/json') {
-                    if (! this.try_load_lang_json(link.href) ) {
-                        throw new Error("Error: Gettext 'try_load_lang_json' failed. Unable to exec xmlhttprequest for link ["+link.href+"]");
-                    }
-                } else if (link.type == 'application/x-po') {
-                    if (! this.try_load_lang_po(link.href) ) {
-                        throw new Error("Error: Gettext 'try_load_lang_po' failed. Unable to exec xmlhttprequest for link ["+link.href+"]");
-                    }
-                } else {
-                    // TODO: implement the other types (po/mo)
-                    throw new Error("TODO: link type ["+link.type+"] found, and support is planned, but not implemented at this time.");
+    if (typeof(lang_link) == 'object' && lang_link.length > 0) {
+        // NOTE: there will be a delay here, as this is async.
+        // So, any i18n calls made right after page load may not
+        // get translated.
+        // XXX: we may want to see if we can "fix" this behavior
+        for (var i=0; i<lang_link.length; i++) {
+            var link = lang_link[i];
+            if (link.type == 'application/json') {
+                if (! this.try_load_lang_json(link.href) ) {
+                    throw new Error("Error: Gettext 'try_load_lang_json' failed. Unable to exec xmlhttprequest for link ["+link.href+"]");
                 }
+            } else if (link.type == 'application/x-po') {
+                if (! this.try_load_lang_po(link.href) ) {
+                    throw new Error("Error: Gettext 'try_load_lang_po' failed. Unable to exec xmlhttprequest for link ["+link.href+"]");
+                }
+            } else {
+                // TODO: implement the other types (mo)
+                throw new Error("TODO: link type ["+link.type+"] found, and support is planned, but not implemented at this time.");
             }
-            this.ran_lang_load = 1;
-        } else {
-            this.ran_lang_load = 0;
         }
     }
 };
 
 // This takes the po2json'd data, and moves it into an internal form
 // for use in our lib, and puts it in our object as:
-//  this.locale_data = {
+//  Gettext._locale_data = {
 //      domain : {
 //          head : { headfield : headvalue },
 //          msgs : {
 //              msgid : [ msgid_plural, msgstr, msgstr_plural ],
 //          },
 Gettext.prototype.parse_locale_data = function(locale_data) {
-    if (typeof(this.locale_data) == 'undefined') {
-        this.locale_data = { };
+    if (typeof(Gettext._locale_data) == 'undefined') {
+        Gettext._locale_data = { };
     }
 
     // suck in every domain defined in the supplied data
@@ -334,33 +325,33 @@ Gettext.prototype.parse_locale_data = function(locale_data) {
         // if they specifcy a blank domain, default to "messages"
         if (domain == "") domain = "messages";
         // init the data structure
-        if (typeof(this.locale_data[domain]) == 'undefined') {
-            this.locale_data[domain] = { };
+        if (typeof(Gettext._locale_data[domain]) == 'undefined') {
+            Gettext._locale_data[domain] = { };
         }
-        if (typeof(this.locale_data[domain].head) == 'undefined') {
-            this.locale_data[domain].head = { };
-            this.locale_data[domain].msgs = { };
-        }
+        if (typeof(Gettext._locale_data[domain].head) == 'undefined')
+            Gettext._locale_data[domain].head = { };
+        if (typeof(Gettext._locale_data[domain].msgs) == 'undefined')
+            Gettext._locale_data[domain].msgs = { };
 
         for (var key in data) {
             if (key == "") {
                 var header = data[key];
                 for (var head in header) {
                     var h = head.toLowerCase();
-                    this.locale_data[domain].head[h] = header[head];
+                    Gettext._locale_data[domain].head[h] = header[head];
                 }
             } else {
-                this.locale_data[domain].msgs[key] = data[key];
+                Gettext._locale_data[domain].msgs[key] = data[key];
             }
         }
     }
 
     // build the plural forms function
-    for (var domain in this.locale_data) {
-        if (typeof(this.locale_data[domain].head['plural-forms']) != 'undefined' &&
-            typeof(this.locale_data[domain].head.plural_func) == 'undefined') {
+    for (var domain in Gettext._locale_data) {
+        if (typeof(Gettext._locale_data[domain].head['plural-forms']) != 'undefined' &&
+            typeof(Gettext._locale_data[domain].head.plural_func) == 'undefined') {
             // untaint data
-            var plural_forms = this.locale_data[domain].head['plural-forms'];
+            var plural_forms = Gettext._locale_data[domain].head['plural-forms'];
             var pf_re = new RegExp('^(\\s*nplurals\\s*=\\s*[0-9]+\\s*;\\s*plural\\s*=\\s*(?:\\s|[-\\?\\|&=!<>+*/%:;a-zA-Z0-9_\(\)])+)', 'm');
             if (pf_re.test(plural_forms)) {
                 //ex english: "Plural-Forms: nplurals=2; plural=(n != 1);\n"
@@ -368,19 +359,19 @@ Gettext.prototype.parse_locale_data = function(locale_data) {
                 //ex russian: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10< =4 && (n%100<10 or n%100>=20) ? 1 : 2)
                 //pf = "nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2)";
 
-                var pf = this.locale_data[domain].head['plural-forms'];
+                var pf = Gettext._locale_data[domain].head['plural-forms'];
                 if (! /;\s*$/.test(pf)) pf = pf.concat(';');
-                var code = 'function (n) { var plural; var nplurals; '+pf+' return (nplurals, plural === true ? 1 : plural ? plural : 0); };';
-                this.locale_data[domain].head.plural_func = eval(code);
+                var code = 'function (n) { var plural; var nplurals; '+pf+' return { "nplural" : nplurals, "plural" : (plural === true ? 1 : plural ? plural : 0) }; };';
+                Gettext._locale_data[domain].head.plural_func = eval(code);
             } else {
                 throw new Error("Syntax error in language file. Plural-Forms header is invalid ["+plural_forms+"]");
             }   
 
         // default to english plural form
-        } else if (typeof(this.locale_data[domain].head.plural_func) == 'undefined') {
-            this.locale_data[domain].head.plural_func = function (n) {
+        } else if (typeof(Gettext._locale_data[domain].head.plural_func) == 'undefined') {
+            Gettext._locale_data[domain].head.plural_func = function (n) {
                 var p = (n != 1) ? 1 : 0;
-                return p;
+                return { 'nplural' : 2, 'plural' : p };
                 };
         } // else, plural_func already created
     }
@@ -406,7 +397,6 @@ Gettext.prototype.try_load_lang_po = function(uri) {
         rv[domain] = parsed;
 
         this.parse_locale_data(rv);
-        this.lang_data_loaded = true;
     }
 
     return 1;
@@ -440,7 +430,7 @@ Gettext.prototype.parse_po = function(data) {
         // Empty line / End of an entry.
         if (/^$/.test(lines[i])) {
             if (typeof(buffer['msgid']) != 'undefined') {
-                var msg_ctxt_id = (typeof(buffer['msgctxt']) != 'undefined' && buffer['msgctxt'].length) ? buffer['msgctxt']+this.context_glue+buffer['msgid'] : buffer['msgid'];
+                var msg_ctxt_id = (typeof(buffer['msgctxt']) != 'undefined' && buffer['msgctxt'].length) ? buffer['msgctxt']+Gettext.context_glue+buffer['msgid'] : buffer['msgid'];
                 var msgid_plural = (typeof(buffer['msgid_plural']) != 'undefined' && buffer['msgid_plural'].length) ? buffer['msgid_plural'] : undefined;
 
                 // find msgstr_* translations and push them on
@@ -506,7 +496,7 @@ Gettext.prototype.parse_po = function(data) {
 
 
     if (buffer['msgid'] && buffer['msgid'].length) {
-        var msg_ctxt_id = (typeof(buffer['msgctxt']) != 'undefined' && buffer['msgctxt'].length) ? buffer['msgctxt']+this.context_glue+buffer['msgid'] : buffer['msgid'];
+        var msg_ctxt_id = (typeof(buffer['msgctxt']) != 'undefined' && buffer['msgctxt'].length) ? buffer['msgctxt']+Gettext.context_glue+buffer['msgid'] : buffer['msgid'];
         var msgid_plural = (typeof(buffer['msgid_plural']) != 'undefined' && buffer['msgid_plural'].length) ? buffer['msgid_plural'] : undefined;
 
         // find msgstr_* translations and push them on
@@ -534,20 +524,25 @@ Gettext.prototype.parse_po = function(data) {
         for (var i=0; i<hlines.length; i++) {
             if (! hlines.length) continue;
 
-            var h = hlines[i].split(':', 2);
-            var hlow = h[0].toLowerCase();
+            var pos = hlines[i].indexOf(':', 0);
+            if (pos != -1) {
+                var key = hlines[i].substring(0, pos);
+                var val = hlines[i].substring(pos +1);
+                var keylow = key.toLowerCase();
 
-            if (cur[hlow] && cur[hlow].length) {
-                errors.push("SKIPPING DUPLICATE HEADER LINE: "+hlines[i]);
-            } else if (/#-#-#-#-#/.test(hlow)) {
-                errors.push("SKIPPING ERROR MARKER IN HEADER: "+hlines[i]);
-            } else if (h.length == 2) {
-                // remove begining spaces if any
-                var val = h[1].replace(/^\s+/, '');
-                cur[hlow] = val;
+                if (cur[keylow] && cur[keylow].length) {
+                    errors.push("SKIPPING DUPLICATE HEADER LINE: "+hlines[i]);
+                } else if (/#-#-#-#-#/.test(keylow)) {
+                    errors.push("SKIPPING ERROR MARKER IN HEADER: "+hlines[i]);
+                } else {
+                    // remove begining spaces if any
+                    val = val.replace(/^\s+/, '');
+                    cur[keylow] = val;
+                }
+
             } else {
                 errors.push("PROBLEM LINE IN HEADER: "+hlines[i]);
-                cur[hlow] = '';
+                cur[hlines[i]] = '';
             }
         }
 
@@ -578,7 +573,6 @@ Gettext.prototype.try_load_lang_json = function(uri) {
 
     var rv = this.JSON(data);
     this.parse_locale_data(rv);
-    this.lang_data_loaded = true;
 
     return 1;
 };
@@ -630,7 +624,7 @@ Gettext.prototype.get_lang_refs = function() {
 
 =head2 textdomain( domain )
 
-et domain for future gettext() calls
+Set domain for future gettext() calls
 
 A  message  domain  is  a  set of translatable msgid messages. Usually,
 every software package has its own message domain. The domain  name  is
@@ -651,6 +645,8 @@ the current message domain.
 If  successful,  the  textdomain  function  returns the current message
 domain, after possibly changing it. (ie. if you set a new domain, the 
 value returned will NOT be the previous domain).
+
+=cut
 
 */
 Gettext.prototype.textdomain = function (domain) {
@@ -683,19 +679,19 @@ Gettext.prototype.dcgettext = function (domain, msgid, category) {
 };
 
 // ngettext
-Gettext.prototype.ngettext = function (msgid, msgid_plural) {
+Gettext.prototype.ngettext = function (msgid, msgid_plural, n) {
     var msgctxt;
     var category;
     return this.dcnpgettext(undefined, msgctxt, msgid, msgid_plural, n, category);
 };
 
-Gettext.prototype.dngettext = function (domain, msgid, msgid_plural) {
+Gettext.prototype.dngettext = function (domain, msgid, msgid_plural, n) {
     var msgctxt;
     var category;
     return this.dcnpgettext(domain, msgctxt, msgid, msgid_plural, n, category);
 };
 
-Gettext.prototype.dcngettext = function (domain, msgid, msgid_plural, category) {
+Gettext.prototype.dcngettext = function (domain, msgid, msgid_plural, n, category) {
     var msgctxt;
     return this.dcnpgettext(domain, msgctxt, msgid, msgid_plural, n, category, category);
 };
@@ -727,18 +723,18 @@ Gettext.prototype.npgettext = function (msgctxt, msgid, msgid_plural, n) {
     return this.dcnpgettext(undefined, msgctxt, msgid, msgid_plural, n, category);
 };
 
-Gettext.prototype.dpgettext = function (domain, msgctxt, msgid, msgid_plural, n) {
+Gettext.prototype.dnpgettext = function (domain, msgctxt, msgid, msgid_plural, n) {
     var category;
     return this.dcnpgettext(domain, msgctxt, msgid, msgid_plural, n, category);
 };
 
 // this has all the options, so we use it for all of them.
-Gettext.prototype.dcnpgettext = function (domain, msgctxt, msgid, category, msgid_plural, n, category) {
+Gettext.prototype.dcnpgettext = function (domain, msgctxt, msgid, msgid_plural, n, category) {
     if (typeof(msgid) == 'undefined') return '';
 
     var plural = (typeof(msgid_plural) == 'undefined') ? false : true;
     var msg_ctxt_id = (typeof(msgctxt) == 'undefined') ? msgid :
-                                msgctxt+this.context_glue+msgid;
+                                msgctxt+Gettext.context_glue+msgid;
 
     var domainname = (typeof(domain) != 'undefined')      ? domain :
                      (typeof(this.domain) != 'undefined') ? this.domain :
@@ -749,14 +745,14 @@ Gettext.prototype.dcnpgettext = function (domain, msgctxt, msgid, category, msgi
     var category = 5;
 
     var locale_data = new Array();
-    if (typeof(this.locale_data) != 'undefined' &&
-        typeof(this.locale_data[domainname]) != 'undefined') {
-        locale_data.push( this.locale_data[domainname] );
+    if (typeof(Gettext._locale_data) != 'undefined' &&
+        typeof(Gettext._locale_data[domainname]) != 'undefined') {
+        locale_data.push( Gettext._locale_data[domainname] );
 
     } else {
         // didn't find domain we're looking for. Search all of them.
-        for (var dom in this.locale_data) {
-            locale_data.push( this.locale_data[dom] );
+        for (var dom in Gettext._locale_data) {
+            locale_data.push( Gettext._locale_data[dom] );
         }
     }
 
@@ -788,7 +784,7 @@ Gettext.prototype.dcnpgettext = function (domain, msgctxt, msgid, category, msgi
     if (plural) {
         var p;
         if (found) {
-            var rv = domain_used.plural_func(n);
+            var rv = domain_used.head.plural_func(n);
             if (! rv.plural) rv.plural = 0;
             if (! rv.nplural) rv.nplural = 0;
             // if plurals returned is out of bound for total plural forms
@@ -849,21 +845,21 @@ Gettext.prototype.JSON = function (data) {
 
 /*
 
-=head1 BUGS / TODO
+=head1 NOTES
+
+These are some notes on the internals
 
 =over
 
-=item locale caching
+=item LOCALE CACHING
 
-This is currently done object-wide.
+Loaded locale data is currently cached class-wide. This means that if two scripts are both using Gettext.js, and both share the same gettext domain, that domain will only be loaded once. This will allow you to grab a new object many times from different places, utilize the same domain, and share a single translation file. The downside is that a domain won't be RE-loaded if a new object is instantiated on a domain that had already been instantiated.
 
-We should consider making this a class-wide cache, so that multiple instances of Gettext would share the same cache (especially since we load nearly all available/found stuff).
+=back
 
-One issue here is that we'll need to change the way we're dealing with tracking "loaded". Currently, every call to new() resets that stuff. We'd have to stop doing that, and append everywhere. This is definitely possible, but will take some fiddling around.
+=head1 BUGS / TODO
 
-Should cache in:
-
-    Gettext.locale_data = { };
+=over
 
 =item error handling
 
@@ -910,11 +906,15 @@ po2json requires perl, and the perl modules Locale::PO and JSON.
 
 =head1 SEE ALSO
 
-Locale::gettext_pp(3pm), POSIX(3pm), gettext(1), gettext(3)
+Locale::gettext_pp(3pm), POSIX(3pm), gettext(1), gettext(3),
+examples/normal/index.html,
+examples/wrapper/i18n.html, examples/wrapper/i18n.js
 
 =head1 AUTHOR
 
-Copyright (C) 2008, Joshua I. Miller E<lt>unrtst@gmail.comE<gt>, all rights reserved. See the source code for details.
+Copyright (C) 2008, Joshua I. Miller E<lt>unrtst@cpan.orgE<gt>, all rights reserved. See the source code for details.
+
+=cut
 
 */
 

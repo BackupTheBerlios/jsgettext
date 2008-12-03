@@ -1,3 +1,26 @@
+test caching...
+init one
+test that it loaded
+init a new one diff domain
+use dgettext to get from old domain
+
+--
+
+I thikn Gettext.js's references to this.context_glue are wrong... that's not
+an instnace varialbe, but a class variable.
+
+http://www.ietf.org/rfc/rfc4627.txt is the json spec
+accoring to it, values in json data must be one of :
+    array : []
+    object: {}
+    number
+    string
+    true
+    false
+    null
+IE. we can't pass "undefined", we must pass "null". So, we've got some recoding.
+
+
 make init method.
 It should run onload
 try: load language from included js script
