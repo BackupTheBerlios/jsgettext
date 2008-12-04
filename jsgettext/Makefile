@@ -1,6 +1,6 @@
 .PHONY: all manifest dist doc readme website
 
-DEST?=/home/groups/jsgettext
+PREFIX?=/home/groups/jsgettext
 
 all: doc manifest readme
 
@@ -25,7 +25,7 @@ dist: doc readme manifest META.yml
 
 website:
 	make -C website
-	make -C website DEST=$(DEST) install
+	make -C website PREFIX=$(PREFIX) install
 
 doc:
 	make -C doc

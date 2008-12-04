@@ -2,11 +2,11 @@
 
 SOURCE=../lib/Gettext.js
 DEMO=../examples/normal/index.html
-DEST?=/home/groups/jsgettext
+PREFIX?=/home/groups/jsgettext
 
 all:htdocs/doc/html/Gettext.html htdocs/lib/Gettext.js htdocs/demo/index.html htdocs/tests
 
-install: $(DEST) all
+install: $(PREFIX) all
 	find htdocs -path "*/CVS" -prune -o ! -name ".*" -print | \
 	cpio -o | \
 	(cd $< ; cpio -i )
