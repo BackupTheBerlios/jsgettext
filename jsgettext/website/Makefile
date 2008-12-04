@@ -1,0 +1,28 @@
+.PHONY: all clean install
+
+SOURCE=../lib/Gettext.js
+DEMO=../examples/normal/index.html
+DEST?=/home/groups/jsgettext
+
+all:htdocs/doc/html/Gettext.html htdocs/demo/Gettext.js htdocs/demo/index.html
+
+install: $(DEST)
+	tar cf - * | (cd $< ; tar xf -)
+
+htdocs/doc/html/Gettext.html: $(SOURCE) htdocs/doc/html
+	pod2html $< > $@
+	rm pod2htm*.tmp
+
+htdocs/demo/Gettext.js: $(SOURCE)
+	cp $< $@
+
+htdocs/demo/index.html: $(DEMO) htdocs/demo
+	cat $< | sed 's/..\/..\/lib\/Gettext.js/Gettext.js/' > $@
+
+htdocs/doc/html htdocs/demo:
+	mkdir -p $@
+
+clean:
+	rm -fr htdocs/doc/html
+	rm -fr htdocs/demo
+
