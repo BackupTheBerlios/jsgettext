@@ -4,7 +4,7 @@ SOURCE=../lib/Gettext.js
 
 all: pod/Gettext.pod html/Gettext.html text/Gettext.text
 
-pod/Gettext.pod: $(SOURCE) html
+pod/Gettext.pod: $(SOURCE) pod
 	perldoc -u $< > $@
 
 html/Gettext.html: pod/Gettext.pod html

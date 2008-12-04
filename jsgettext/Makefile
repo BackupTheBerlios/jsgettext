@@ -1,4 +1,6 @@
-.PHONY: all manifest dist doc readme
+.PHONY: all manifest dist doc readme website
+
+DEST?=/home/groups/jsgettext
 
 all: doc manifest readme
 
@@ -20,6 +22,10 @@ dist: doc readme manifest META.yml
 	rm -r $$D && \
 	cd $$H && \
 	mv "/tmp/$${D}.tar.gz" ./
+
+website:
+	make -C website
+	make -C website DEST=$(DEST) install
 
 doc:
 	make -C doc
