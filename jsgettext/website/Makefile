@@ -7,7 +7,7 @@ DEST?=/home/groups/jsgettext
 all:htdocs/doc/html/Gettext.html htdocs/demo/Gettext.js htdocs/demo/index.html
 
 install: $(DEST)
-	tar cf - * | (cd $< ; tar xf -)
+	tar --exclude=CVS -cf - * | (cd $< ; tar xf -)
 
 htdocs/doc/html/Gettext.html: $(SOURCE) htdocs/doc/html
 	pod2html $< > $@
