@@ -82,7 +82,7 @@ DESCRIPTION
     language catalogs from .mo, .po, or preprocessed json files (converter
     included).
 
-    The locale initialization differes from that of GNU Gettext / POSIX.
+    The locale initialization differs from that of GNU Gettext / POSIX.
     Rather than setting the category, domain, and paths, and letting the
     libs find the right file, you must explicitly load the file at some
     point. The "domain" will still be honored. Future versions may be
