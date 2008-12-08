@@ -8,7 +8,12 @@ readme:
 	perldoc -t lib/Gettext.js > README
 
 manifest:
-	find . -type f ! -name '*.bak' | grep -v CVS | perl -pe 's/..//' | sort > MANIFEST
+	find . -type f ! -name '*.bak' ! -name '.cvsignore' | \
+	  grep -v CVS | \
+	  sed 's/^.\///' | \
+	  grep -v '^website' | \
+	  grep -v '^Gettext-.....tar.gz$$' | \
+	  sort > MANIFEST
 
 dist: doc readme manifest META.yml
 	perl -e 'use YAML;';
