@@ -143,7 +143,9 @@ wrap.i18n.init = function (root, domain, locale_data) {
 
     var that = this;
 
-    root['i18n'] = eval("function (str1, str2, str3, str4) { return wrap.i18n.instances["+index+"].i18n(str1, str2, str3, str4); }");
+    // IE breaks trying to eval this, so use new Function
+    // root['i18n'] = eval("(function (str1, str2, str3, str4) { return wrap.i18n.instances["+index+"].i18n(str1, str2, str3, str4); })");
+    root['i18n'] = new Function("str1", "str2", "str3", "str4", "return wrap.i18n.instances["+index+"].i18n(str1, str2, str3, str4);");
 }
 
 

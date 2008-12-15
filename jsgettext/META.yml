@@ -1,6 +1,6 @@
 ---
 name: Gettext
-version: 0.01
+version: 0.02
 author:
   - Joshua I. Miller <unrtst@cpan.org>
 abstract: Javascript implemenation of GNU Gettext API.

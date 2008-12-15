@@ -361,8 +361,14 @@ Gettext.prototype.parse_locale_data = function(locale_data) {
 
                 var pf = Gettext._locale_data[domain].head['plural-forms'];
                 if (! /;\s*$/.test(pf)) pf = pf.concat(';');
+                /* We used to use eval, but it seems IE has issues with it.
+                 * We now use "new Function", though it carries a slightly
+                 * bigger performance hit.
                 var code = 'function (n) { var plural; var nplurals; '+pf+' return { "nplural" : nplurals, "plural" : (plural === true ? 1 : plural ? plural : 0) }; };';
-                Gettext._locale_data[domain].head.plural_func = eval(code);
+                Gettext._locale_data[domain].head.plural_func = eval("("+code+")");
+                */
+                var code = 'var plural; var nplurals; '+pf+' return { "nplural" : nplurals, "plural" : (plural === true ? 1 : plural ? plural : 0) };';
+                Gettext._locale_data[domain].head.plural_func = new Function("n", code);
             } else {
                 throw new Error("Syntax error in language file. Plural-Forms header is invalid ["+plural_forms+"]");
             }   

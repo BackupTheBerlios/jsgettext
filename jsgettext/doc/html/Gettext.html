@@ -151,7 +151,6 @@
     };
     // please see the included po2json script for the details on this format</pre>
 <p>This method also allows you to use unsupported file formats, so long as you can parse them into the above format.</p>
-</li>
 <li><strong><a name="item_use_ajax_to_load_language_file_2e">Use AJAX to load language file.</a></strong>
 
 <p>Use XMLHttpRequest (actually, SJAX - syncronous) to load an external resource.</p>
@@ -176,7 +175,6 @@
     type=application/x-po</pre>
 </li>
 </ul>
-</li>
 </ol>
 <p>
 </p>
@@ -221,16 +219,18 @@
     &lt;link rel=&quot;gettext&quot; type=&quot;application/x-mo&quot; url=&quot;/path/to/file.mo&quot;&gt;</pre>
 <p>args:</p>
 <dl>
-<dt><strong><a name="item_domain">domain</a></strong></dt>
+<dt><strong><a name="item_domain">domain</a></strong>
 
 <dd>
 <p>The Gettext domain, not www.whatev.com. It's usually your applications basename. If the .po file was ``myapp.po'', this would be ``myapp''.</p>
 </dd>
-<dt><strong><a name="item_locale_data">locale_data</a></strong></dt>
+</li>
+<dt><strong><a name="item_locale_data">locale_data</a></strong>
 
 <dd>
 <p>Raw locale data (in json structure). If specified, from_link data will be ignored.</p>
 </dd>
+</li>
 </dl>
 <p>
 </p>
@@ -257,49 +257,70 @@ value returned will NOT be the previous domain).</p>
 <h1><a name="notes">NOTES</a></h1>
 <p>These are some notes on the internals</p>
 <dl>
-<dt><strong><a name="item_locale_caching">LOCALE CACHING</a></strong></dt>
+<dt><strong><a name="item_locale_caching">LOCALE CACHING</a></strong>
 
 <dd>
 <p>Loaded locale data is currently cached class-wide. This means that if two scripts are both using Gettext.js, and both share the same gettext domain, that domain will only be loaded once. This will allow you to grab a new object many times from different places, utilize the same domain, and share a single translation file. The downside is that a domain won't be RE-loaded if a new object is instantiated on a domain that had already been instantiated.</p>
 </dd>
+</li>
 </dl>
 <p>
 </p>
 <hr />
 <h1><a name="bugs___todo">BUGS / TODO</a></h1>
 <dl>
-<dt><strong><a name="item_error_handling">error handling</a></strong></dt>
+<dt><strong><a name="item_error_handling">error handling</a></strong>
 
 <dd>
 <p>Currently, there are several places that throw errors. In GNU Gettext, there are no fatal errors, which allows text to still be displayed regardless of how broken the environment becomes. We should evaluate and determine where we want to stand on that issue.</p>
 </dd>
-<dt><strong><a name="item_support">syncronous only support (no ajax support)</a></strong></dt>
+</li>
+<dt><strong><a name="item_support">syncronous only support (no ajax support)</a></strong>
 
 <dd>
 <p>Currently, fetching language data is done purely syncronous, which means the page will halt while those files are fetched/loaded.</p>
+</dd>
+<dd>
 <p>This is often what you want, as then following translation requests will actually be translated. However, if all your calls are done dynamically (ie. error handling only or something), loading in the background may be more adventagous.</p>
+</dd>
+<dd>
 <p>It's still recommended to use the statically defined &lt;script ...&gt; method, which should have the same delay, but it will cache the result.</p>
 </dd>
-<dt><strong><a name="item_domain_support">domain support</a></strong></dt>
+</li>
+<dt><strong><a name="item_domain_support">domain support</a></strong>
 
 <dd>
 <p>domain support. We need to figure out how we're going to handle that across the board.</p>
+</dd>
+<dd>
 <p>In CCMS, with the i18n calls, they currently do nothing to distinguish between domains. For that, saying ``hey, it's all 'ccms''' may be ok (though zoneinfo would be nice to separate out).</p>
+</dd>
+<dd>
 <p>In javascript, we run into a problem, because the namespace is essentially global. If we create a new i18n object, and use that, then that'd be ok... but that means a different calling convention than everthing else. The problem really lies with making the shortcuts ( <code>_(``str'')</code> or <code>i18n(``str'')</code> ).</p>
+</dd>
+<dd>
 <p>Maybe we can force our apps to do:
     this.i18n(``str'')</p>
+</dd>
+<dd>
 <p>In our i18n wrapper lib, we could do the API like this:</p>
+</dd>
+<dd>
 <pre>
     // in some other .js file that needs i18n
     this.i18nObj = new i18n;
     this.i18n = this.i18nObj.init('domain');</pre>
+</dd>
+<dd>
 <p>This really goes back to the crazy setup stuff that happens in all of these, and I'm basically trying to reinvent the wheel so it fits in javascript.</p>
 </dd>
-<dt><strong><a name="item_encoding">encoding</a></strong></dt>
+</li>
+<dt><strong><a name="item_encoding">encoding</a></strong>
 
 <dd>
 <p>May want to add encoding/reencoding stuff.</p>
 </dd>
+</li>
 </dl>
 <p>
 </p>

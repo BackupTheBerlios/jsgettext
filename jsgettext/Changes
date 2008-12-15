@@ -1,2 +1,6 @@
+2008-12-15      v0.02
+- BUGFIX: IE broke while trying to create plural functions.
+-         Updated to use "new Function" instead of eval'ing the code.
+
 2008-11-13      v0.01
 - Initial version.
