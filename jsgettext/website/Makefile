@@ -4,6 +4,8 @@ SOURCE=../lib/Gettext.js
 DEMO=../examples/normal/index.html
 PREFIX?=/home/groups/jsgettext
 
+TEST_FILES:=$(shell find ../tests -path "*/CVS" -prune -o ! -name ".*" -print)
+
 all:htdocs/doc/html/Gettext.html htdocs/lib/Gettext.js htdocs/demo/index.html htdocs/tests
 
 install: $(PREFIX) all
@@ -11,7 +13,7 @@ install: $(PREFIX) all
 	cpio -o | \
 	(cd $< ; cpio -iu )
 
-htdocs/tests:
+htdocs/tests: $(TEST_FILES)
 	mkdir -p $@
 	cd ../ && \
 	find tests -path "*/CVS" -prune -o ! -name ".*" -print | \
