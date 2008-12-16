@@ -9,14 +9,14 @@ all:htdocs/doc/html/Gettext.html htdocs/lib/Gettext.js htdocs/demo/index.html ht
 install: $(PREFIX) all
 	find htdocs -path "*/CVS" -prune -o ! -name ".*" -print | \
 	cpio -o | \
-	(cd $< ; cpio -i )
+	(cd $< ; cpio -iu )
 
 htdocs/tests:
 	mkdir -p $@
 	cd ../ && \
 	find tests -path "*/CVS" -prune -o ! -name ".*" -print | \
 	cpio -o | \
-	(cd website/htdocs && cpio -i )
+	(cd website/htdocs && cpio -iu )
 
 htdocs/lib/Gettext.js: $(SOURCE) htdocs/lib
 	cp $< $@
@@ -32,6 +32,7 @@ htdocs/doc/html htdocs/demo htdocs/lib:
 	mkdir -p $@
 
 clean:
+	rm -fr htdocs/lib
 	rm -fr htdocs/doc
 	rm -fr htdocs/demo
 	rm -fr htdocs/tests
