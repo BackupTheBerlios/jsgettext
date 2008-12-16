@@ -1,3 +1,10 @@
+2008-12-16      v0.04
+- TEST FIX: Fix for IE5.5 and IE6. There was some odd interaction between
+-           .html tests, JSAN, and using JSAN.use('Test.More').
+-           Updated to statically include Test.Builder and Test.More.
+-           IE6 now completes all tests. Tests confirmed passing on:
+-               FF1.5, FF2, FF3, IE6, IE7, Opera9, Opera10, Chrome
+
 2008-12-15      v0.03
 - TEST FIX: Fixed improperly formatted json data in test datasets.
 -           This caused IE to fail some tests.

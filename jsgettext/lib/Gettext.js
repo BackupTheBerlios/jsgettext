@@ -906,6 +906,16 @@ May want to add encoding/reencoding stuff.
 =back
 
 
+=head1 COMPATABILITY
+
+This has been tested on the following browsers. It may work on others, but these are all those to which I have access.
+
+    FF1.5, FF2, FF3, IE6, IE7, Opera9, Opera10, Safari3.1, Chrome
+
+    *FF = Firefox
+    *IE = Internet Explorer
+
+
 =head1 REQUIRES
 
 po2json requires perl, and the perl modules Locale::PO and JSON.
