@@ -1,12 +1,12 @@
 <head>
     <link rel="gettext" type="application/x-po" href="LC_MESSAGES/test.po" />
-    <script type="text/javascript" src="./lib/JSAN.js"></script>
+    <script type="text/javascript" src="./lib/Test/Builder.js"></script>
+    <script type="text/javascript" src="./lib/Test/More.js"></script>
     <script type="text/javascript" src="../lib/Gettext.js"></script>
 </head>
 <body>
 <pre id="test"><script type="text/javascript">
 
-new JSAN('./lib').use('Test.More');
 plan({tests: 44});
 
 ok(typeof(Gettext) != 'undefined');
