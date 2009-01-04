@@ -47,7 +47,7 @@ Javascript Gettext - Javascript implemenation of GNU Gettext API.
  // The other way to load the language lookup is a "link" tag
  // Downside is that the data won't be cached
  // Upside is that it's easy to specify multiple files
- <link rel="gettext" uri="/path/LC_MESSAGES/myDomain.json" />
+ <link rel="gettext" href="/path/LC_MESSAGES/myDomain.json" />
  <script language="javascript" src="/path/Gettext.js'></script>
 
  var gt = new Gettext({ "domain" : "myDomain" });
@@ -203,10 +203,10 @@ The above can also be used if locale data is specified in a statically included 
 
 Finally, you may load the locale data by referencing it in a <LINK> tag. Simply exclude the 'locale_data' option, and all <LINK rel="gettext" ...> items will be tried. The <LINK> should be specified as:
 
-    <link rel="gettext" type="application/json" url="/path/to/file.json">
-    <link rel="gettext" type="text/javascript"  url="/path/to/file.json">
-    <link rel="gettext" type="application/x-po" url="/path/to/file.po">
-    <link rel="gettext" type="application/x-mo" url="/path/to/file.mo">
+    <link rel="gettext" type="application/json" href="/path/to/file.json">
+    <link rel="gettext" type="text/javascript"  href="/path/to/file.json">
+    <link rel="gettext" type="application/x-po" href="/path/to/file.po">
+    <link rel="gettext" type="application/x-mo" href="/path/to/file.mo">
 
 args:
 

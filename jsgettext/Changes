@@ -1,3 +1,7 @@
+2009-01-04      v0.05
+- DOCS: Typo's in documentation fixed (including po's via <link> tags
+-       must use href= not url= nor uri=).
+
 2008-12-16      v0.04
 - TEST FIX: Fix for IE5.5 and IE6. There was some odd interaction between
 -           .html tests, JSAN, and using JSAN.use('Test.More').

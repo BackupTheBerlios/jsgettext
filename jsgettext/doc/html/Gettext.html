@@ -68,7 +68,7 @@
  // The other way to load the language lookup is a &quot;link&quot; tag
  // Downside is that the data won't be cached
  // Upside is that it's easy to specify multiple files
- &lt;link rel=&quot;gettext&quot; uri=&quot;/path/LC_MESSAGES/myDomain.json&quot; /&gt;
+ &lt;link rel=&quot;gettext&quot; href=&quot;/path/LC_MESSAGES/myDomain.json&quot; /&gt;
  &lt;script language=&quot;javascript&quot; src=&quot;/path/Gettext.js'&gt;&lt;/script&gt;</pre>
 <pre>
  var gt = new Gettext({ &quot;domain&quot; : &quot;myDomain&quot; });
@@ -214,10 +214,10 @@
                           'locale_data' : json_locale_data_variable );</pre>
 <p>Finally, you may load the locale data by referencing it in a &lt;LINK&gt; tag. Simply exclude the 'locale_data' option, and all &lt;LINK rel=``gettext'' ...&gt; items will be tried. The &lt;LINK&gt; should be specified as:</p>
 <pre>
-    &lt;link rel=&quot;gettext&quot; type=&quot;application/json&quot; url=&quot;/path/to/file.json&quot;&gt;
-    &lt;link rel=&quot;gettext&quot; type=&quot;text/javascript&quot;  url=&quot;/path/to/file.json&quot;&gt;
-    &lt;link rel=&quot;gettext&quot; type=&quot;application/x-po&quot; url=&quot;/path/to/file.po&quot;&gt;
-    &lt;link rel=&quot;gettext&quot; type=&quot;application/x-mo&quot; url=&quot;/path/to/file.mo&quot;&gt;</pre>
+    &lt;link rel=&quot;gettext&quot; type=&quot;application/json&quot; href=&quot;/path/to/file.json&quot;&gt;
+    &lt;link rel=&quot;gettext&quot; type=&quot;text/javascript&quot;  href=&quot;/path/to/file.json&quot;&gt;
+    &lt;link rel=&quot;gettext&quot; type=&quot;application/x-po&quot; href=&quot;/path/to/file.po&quot;&gt;
+    &lt;link rel=&quot;gettext&quot; type=&quot;application/x-mo&quot; href=&quot;/path/to/file.mo&quot;&gt;</pre>
 <p>args:</p>
 <dl>
 <dt><strong><a name="item_domain">domain</a></strong>
