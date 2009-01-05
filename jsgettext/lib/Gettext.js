@@ -45,7 +45,9 @@ Javascript Gettext - Javascript implemenation of GNU Gettext API.
 
  // //////////////////////////////////////////////////////////
  // The other way to load the language lookup is a "link" tag
- // Downside is that the data won't be cached
+ // Downside is that not all browser cache XMLHttpRequests the
+ // same way, so caching of the language data isn't guarenteed
+ // across page loads.
  // Upside is that it's easy to specify multiple files
  <link rel="gettext" href="/path/LC_MESSAGES/myDomain.json" />
  <script language="javascript" src="/path/Gettext.js'></script>
@@ -91,7 +93,7 @@ Javascript Gettext - Javascript implemenation of GNU Gettext API.
              "header_key" : "header value",
              "header_key" : "header value",
          "msgid" : [ "msgid_plural", "msgstr", "msgstr_plural", "msgstr_pluralN" ],
-         "msgctxt\004msgid" : [ "", "msgstr" ],
+         "msgctxt\004msgid" : [ null, "msgstr" ],
          },
      "AnotherDomain" : {
          },
@@ -131,7 +133,7 @@ Configure in one of two ways:
             "msgid" : [ "msgid_plural", "translation", "plural_translation" ],
         },
     };
-    // please see the included po2json script for the details on this format
+    // please see the included bin/po2json script for the details on this format
 
 This method also allows you to use unsupported file formats, so long as you can parse them into the above format.
 
@@ -145,21 +147,23 @@ Supported external formats are:
 
 =item * Javascript Object Notation (.json)
 
-(see po2json)
+(see bin/po2json)
 
     type=application/json
-
-=item * Machine Object (compiled .po) (.mo)
-
-(see GNU Gettext's msgfmt)
-
-    type=application/x-mo
 
 =item * Uniforum Portable Object (.po)
 
 (see GNU Gettext's xgettext)
 
     type=application/x-po
+
+=item * Machine Object (compiled .po) (.mo)
+
+NOTE: .mo format isn't actually supported just yet, but support is planned.
+
+(see GNU Gettext's msgfmt)
+
+    type=application/x-mo
 
 =back
 
@@ -169,20 +173,21 @@ Supported external formats are:
 
 The following methods are implemented:
 
-    new Gettext(args)
-    textdomain
-    gettext
-    dgettext
-    dcgettext
-    ngettext
-    dngettext
-    dcngettext
-    pgettext
-    dpgettext
-    dcpgettext
-    npgettext
-    dnpgettext
-    dcnpgettext
+  new Gettext(args)
+  textdomain  (domain)
+  gettext     (msgid)
+  dgettext    (domainname, msgid)
+  dcgettext   (domainname, msgid, LC_MESSAGES)
+  ngettext    (msgid, msgid_plural, count)
+  dngettext   (domainname, msgid, msgid_plural, count)
+  dcngettext  (domainname, msgid, msgid_plural, count, LC_MESSAGES)
+  pgettext    (msgctxt, msgid)
+  dpgettext   (domainname, msgctxt, msgid)
+  dcpgettext  (domainname, msgctxt, msgid, LC_MESSAGES)
+  npgettext   (msgctxt, msgid, msgid_plural, count)
+  dnpgettext  (domainname, msgctxt, msgid, msgid_plural, count)
+  dcnpgettext (domainname, msgctxt, msgid, msgid_plural, count, LC_MESSAGES)
+  strargs     (string, args_array)
 
 
 =head2 new Gettext (args)
@@ -233,11 +238,13 @@ Gettext = function (args) {
 
     // set options
     var options = [ "domain", "locale_data" ];
-    if (typeof(args) == "object") {
+    if (this.isValidObject(args)) {
         for (var i in args) {
             for (var j=0; j<options.length; j++) {
                 if (i == options[j]) {
-                    this[i] = args[i];
+                    // don't set it if it's null or undefined
+                    if (this.isValidObject(args[i]))
+                        this[i] = args[i];
                 }
             }
         }
@@ -287,14 +294,14 @@ Gettext.prototype.try_load_lang = function() {
                     throw new Error("Error: Gettext 'try_load_lang_po' failed. Unable to exec xmlhttprequest for link ["+link.href+"]");
                 }
             } else {
-                // TODO: implement the other types (mo)
+                // TODO: implement the other types (.mo)
                 throw new Error("TODO: link type ["+link.type+"] found, and support is planned, but not implemented at this time.");
             }
         }
     }
 };
 
-// This takes the po2json'd data, and moves it into an internal form
+// This takes the bin/po2json'd data, and moves it into an internal form
 // for use in our lib, and puts it in our object as:
 //  Gettext._locale_data = {
 //      domain : {
@@ -309,8 +316,9 @@ Gettext.prototype.parse_locale_data = function(locale_data) {
 
     // suck in every domain defined in the supplied data
     for (var domain in locale_data) {
-        // skip empty specs
-        if (typeof(locale_data[domain]) == 'undefined') continue;
+        // skip empty specs (flexibly)
+        if ((! locale_data.hasOwnProperty(domain)) || (! this.isValidObject(locale_data[domain])))
+            continue;
         // skip if it has no msgid's
         var has_msgids = false;
         for (var msgid in locale_data[domain]) {
@@ -325,12 +333,11 @@ Gettext.prototype.parse_locale_data = function(locale_data) {
         // if they specifcy a blank domain, default to "messages"
         if (domain == "") domain = "messages";
         // init the data structure
-        if (typeof(Gettext._locale_data[domain]) == 'undefined') {
+        if (! this.isValidObject(Gettext._locale_data[domain]) )
             Gettext._locale_data[domain] = { };
-        }
-        if (typeof(Gettext._locale_data[domain].head) == 'undefined')
+        if (! this.isValidObject(Gettext._locale_data[domain].head) )
             Gettext._locale_data[domain].head = { };
-        if (typeof(Gettext._locale_data[domain].msgs) == 'undefined')
+        if (! this.isValidObject(Gettext._locale_data[domain].msgs) )
             Gettext._locale_data[domain].msgs = { };
 
         for (var key in data) {
@@ -348,7 +355,7 @@ Gettext.prototype.parse_locale_data = function(locale_data) {
 
     // build the plural forms function
     for (var domain in Gettext._locale_data) {
-        if (typeof(Gettext._locale_data[domain].head['plural-forms']) != 'undefined' &&
+        if (this.isValidObject(Gettext._locale_data[domain].head['plural-forms']) &&
             typeof(Gettext._locale_data[domain].head.plural_func) == 'undefined') {
             // untaint data
             var plural_forms = Gettext._locale_data[domain].head['plural-forms'];
@@ -436,8 +443,14 @@ Gettext.prototype.parse_po = function(data) {
         // Empty line / End of an entry.
         if (/^$/.test(lines[i])) {
             if (typeof(buffer['msgid']) != 'undefined') {
-                var msg_ctxt_id = (typeof(buffer['msgctxt']) != 'undefined' && buffer['msgctxt'].length) ? buffer['msgctxt']+Gettext.context_glue+buffer['msgid'] : buffer['msgid'];
-                var msgid_plural = (typeof(buffer['msgid_plural']) != 'undefined' && buffer['msgid_plural'].length) ? buffer['msgid_plural'] : undefined;
+                var msg_ctxt_id = (typeof(buffer['msgctxt']) != 'undefined' &&
+                                   buffer['msgctxt'].length) ?
+                                  buffer['msgctxt']+Gettext.context_glue+buffer['msgid'] :
+                                  buffer['msgid'];
+                var msgid_plural = (typeof(buffer['msgid_plural']) != 'undefined' &&
+                                    buffer['msgid_plural'].length) ?
+                                   buffer['msgid_plural'] :
+                                   null;
 
                 // find msgstr_* translations and push them on
                 var trans = [];
@@ -450,7 +463,7 @@ Gettext.prototype.parse_po = function(data) {
 
                 // only add it if we've got a translation
                 // NOTE: this doesn't conform to msgfmt specs
-                if (trans.length) rv[msg_ctxt_id] = trans;
+                if (trans.length > 1) rv[msg_ctxt_id] = trans;
 
                 buffer = {};
                 lastbuffer = "";
@@ -501,9 +514,16 @@ Gettext.prototype.parse_po = function(data) {
     }
 
 
-    if (buffer['msgid'] && buffer['msgid'].length) {
-        var msg_ctxt_id = (typeof(buffer['msgctxt']) != 'undefined' && buffer['msgctxt'].length) ? buffer['msgctxt']+Gettext.context_glue+buffer['msgid'] : buffer['msgid'];
-        var msgid_plural = (typeof(buffer['msgid_plural']) != 'undefined' && buffer['msgid_plural'].length) ? buffer['msgid_plural'] : undefined;
+    // handle the final entry
+    if (typeof(buffer['msgid']) != 'undefined') {
+        var msg_ctxt_id = (typeof(buffer['msgctxt']) != 'undefined' &&
+                           buffer['msgctxt'].length) ?
+                          buffer['msgctxt']+Gettext.context_glue+buffer['msgid'] :
+                          buffer['msgid'];
+        var msgid_plural = (typeof(buffer['msgid_plural']) != 'undefined' &&
+                            buffer['msgid_plural'].length) ?
+                           buffer['msgid_plural'] :
+                           null;
 
         // find msgstr_* translations and push them on
         var trans = [];
@@ -516,7 +536,7 @@ Gettext.prototype.parse_po = function(data) {
 
         // only add it if we've got a translation
         // NOTE: this doesn't conform to msgfmt specs
-        if (trans.length) rv[msg_ctxt_id] = trans;
+        if (trans.length > 1) rv[msg_ctxt_id] = trans;
 
         buffer = {};
         lastbuffer = "";
@@ -557,6 +577,10 @@ Gettext.prototype.parse_po = function(data) {
     } else {
         rv[""] = {};
     }
+
+    // TODO: XXX: if there are errors parsing, what do we want to do?
+    // GNU Gettext silently ignores errors. So will we.
+    // alert( "Errors parsing po file:\n" + errors.join("\n") );
 
     return rv;
 };
@@ -642,8 +666,8 @@ npgettext functions, and by the dgettext, dcgettext, dngettext, dcngettext,
 dpgettext, dcpgettext, dnpgettext and dcnpgettext functions when called
 with a NULL domainname argument.
 
-If domainname is not NULL, the current message domain is set to domain‐
-name.
+If domainname is not NULL, the current message domain is set to
+domainname.
 
 If domainname is undefined, null, or empty string, the function returns
 the current message domain.
@@ -660,13 +684,185 @@ Gettext.prototype.textdomain = function (domain) {
     return this.domain;
 }
 
+/*
+
+=head2 gettext( MSGID )
+
+Returns the translation for B<MSGID>.  Example:
+
+    alert( gt.gettext("Hello World!\n") );
+
+If no translation can be found, the unmodified B<MSGID> is returned,
+i. e. the function can I<never> fail, and will I<never> mess up your
+original message.
+
+One common mistake is to interpolate a variable into the string like this:
+
+  var translated = gt.gettext("Hello " + full_name);
+
+The interpolation will happen before it's passed to gettext, and it's 
+unlikely you'll have a translation for every "Hello Tom" and "Hello Dick"
+and "Hellow Harry" that may arise.
+
+Use C<strargs()> (see below) to solve this problem:
+
+  var translated = Gettext.strargs( gt.gettext("Hello %1"), [full_name] );
+
+This is espeically useful when multiple replacements are needed, as they 
+may not appear in the same order within the translation. As an English to
+French example:
+
+  Expected result: "This is the red ball"
+  English: "This is the %1 %2"
+  French:  "C'est le %2 %1"
+  Code: Gettext.strargs( gt.gettext("This is the %1 %2"), ["red", "ball"] );
+
+(The example is stupid because neither color nor thing will get
+translated here ...).
+
+=head2 dgettext( TEXTDOMAIN, MSGID )
+
+Like gettext(), but retrieves the message for the specified 
+B<TEXTDOMAIN> instead of the default domain.  In case you wonder what
+a textdomain is, see above section on the textdomain() call.
+
+=head2 dcgettext( TEXTDOMAIN, MSGID, CATEGORY )
+
+Like dgettext() but retrieves the message from the specified B<CATEGORY>
+instead of the default category C<LC_MESSAGES>.
+
+NOTE: the categories are really useless in javascript context. This is
+here for GNU Gettext API compatability. In practice, you'll never need
+to use this. This applies to all the calls including the B<CATEGORY>.
+
+
+=head2 ngettext( MSGID, MSGID_PLURAL, COUNT )
+
+Retrieves the correct translation for B<COUNT> items.  In legacy software
+you will often find something like:
+
+    alert( count + " file(s) deleted.\n" );
+
+or
+
+    printf(count + " file%s deleted.\n", $count == 1 ? '' : 's');
+
+I<NOTE: javascript lacks a builtin printf, so the above isn't a working example>
+
+The first example looks awkward, the second will only work in English
+and languages with similar plural rules.  Before ngettext() was introduced,
+the best practice for internationalized programs was:
+
+    if (count == 1) {
+        alert( gettext("One file deleted.\n") );
+    } else {
+        printf( gettext("%d files deleted.\n"), count );
+    }
+
+This is a nuisance for the programmer and often still not sufficient
+for an adequate translation.  Many languages have completely different
+ideas on numerals.  Some (French, Italian, ...) treat 0 and 1 alike,
+others make no distinction at all (Japanese, Korean, Chinese, ...),
+others have two or more plural forms (Russian, Latvian, Czech,
+Polish, ...).  The solution is:
+
+    printf( ngettext("One file deleted.\n",
+                     "%d files deleted.\n",
+                     count), // argument to ngettext!
+            count);          // argument to printf!
+
+In English, or if no translation can be found, the first argument
+(B<MSGID>) is picked if C<count> is one, the second one otherwise.
+For other languages, the correct plural form (of 1, 2, 3, 4, ...)
+is automatically picked, too.  You don't have to know anything about
+the plural rules in the target language, ngettext() will take care
+of that.
+
+This is most of the time sufficient but you will have to prove your
+creativity in cases like
+
+    "%d file(s) deleted, and %d file(s) created.\n"
+
+That said, javascript lacks C<printf()> support. Supplied with Gettext.js
+is the C<strargs()> method, which can be used for these cases:
+
+    Gettext.strargs( gt.ngettext( "One file deleted.\n",
+                                  "%d files deleted.\n",
+                                  count), // argument to ngettext!
+                     count); // argument to strargs!
+
+NOTE: the variable replacement isn't done for you, so you must
+do it yourself as in the above.
+
+=head2 dngettext( TEXTDOMAIN, MSGID, MSGID_PLURAL, COUNT )
+
+Like ngettext() but retrieves the translation from the specified
+textdomain instead of the default domain.
+
+=head2 dcngettext( TEXTDOMAIN, MSGID, MSGID_PLURAL, COUNT, CATEGORY )
+
+Like dngettext() but retrieves the translation from the specified
+category, instead of the default category C<LC_MESSAGES>.
+
+
+=head2 pgettext( MSGCTXT, MSGID )
+
+Returns the translation of MSGID, given the context of MSGCTXT.
+
+Both items are used as a unique key into the message catalog.
+
+This allows the translator to have two entries for words that may
+translate to different foreign words based on their context. For
+example, the word "View" may be a noun or a verb, which may be
+used in a menu as File->View or View->Source.
+
+    alert( pgettext( "Verb: To View", "View" ) );
+    alert( pgettext( "Noun: A View", "View"  ) );
+
+The above will both lookup different entries in the message catalog.
+
+In English, or if no translation can be found, the second argument
+(B<MSGID>) is returned.
+
+=head2 dpgettext( TEXTDOMAIN, MSGCTXT, MSGID )
+
+Like pgettext(), but retrieves the message for the specified 
+B<TEXTDOMAIN> instead of the default domain.
+
+=head2 dcpgettext( TEXTDOMAIN, MSGCTXT, MSGID, CATEGORY )
+
+Like dpgettext() but retrieves the message from the specified B<CATEGORY>
+instead of the default category C<LC_MESSAGES>.
+
+
+=head2 npgettext( MSGCTXT, MSGID, MSGID_PLURAL, COUNT )
+
+Like ngettext() with the addition of context as in pgettext().
+
+In English, or if no translation can be found, the second argument
+(MSGID) is picked if B<COUNT> is one, the third one otherwise.
+
+=head2 dnpgettext( TEXTDOMAIN, MSGCTXT, MSGID, MSGID_PLURAL, COUNT )
+
+Like npgettext() but retrieves the translation from the specified
+textdomain instead of the default domain.
+
+=head2 dcnpgettext( TEXTDOMAIN, MSGCTXT, MSGID, MSGID_PLURAL, COUNT, CATEGORY )
+
+Like dnpgettext() but retrieves the translation from the specified
+category, instead of the default category C<LC_MESSAGES>.
+
+=cut
+
+*/
+
 // gettext
 Gettext.prototype.gettext = function (msgid) {
     var msgctxt;
     var msgid_plural;
     var n;
     var category;
-    return this.dcnpgettext(undefined, msgctxt, msgid, msgid_plural, n, category);
+    return this.dcnpgettext(null, msgctxt, msgid, msgid_plural, n, category);
 };
 
 Gettext.prototype.dgettext = function (domain, msgid) {
@@ -688,7 +884,7 @@ Gettext.prototype.dcgettext = function (domain, msgid, category) {
 Gettext.prototype.ngettext = function (msgid, msgid_plural, n) {
     var msgctxt;
     var category;
-    return this.dcnpgettext(undefined, msgctxt, msgid, msgid_plural, n, category);
+    return this.dcnpgettext(null, msgctxt, msgid, msgid_plural, n, category);
 };
 
 Gettext.prototype.dngettext = function (domain, msgid, msgid_plural, n) {
@@ -707,7 +903,7 @@ Gettext.prototype.pgettext = function (msgctxt, msgid) {
     var msgid_plural;
     var n;
     var category;
-    return this.dcnpgettext(undefined, msgctxt, msgid, msgid_plural, n, category);
+    return this.dcnpgettext(null, msgctxt, msgid, msgid_plural, n, category);
 };
 
 Gettext.prototype.dpgettext = function (domain, msgctxt, msgid) {
@@ -726,7 +922,7 @@ Gettext.prototype.dcpgettext = function (domain, msgctxt, msgid, category) {
 // npgettext
 Gettext.prototype.npgettext = function (msgctxt, msgid, msgid_plural, n) {
     var category;
-    return this.dcnpgettext(undefined, msgctxt, msgid, msgid_plural, n, category);
+    return this.dcnpgettext(null, msgctxt, msgid, msgid_plural, n, category);
 };
 
 Gettext.prototype.dnpgettext = function (domain, msgctxt, msgid, msgid_plural, n) {
@@ -736,15 +932,14 @@ Gettext.prototype.dnpgettext = function (domain, msgctxt, msgid, msgid_plural, n
 
 // this has all the options, so we use it for all of them.
 Gettext.prototype.dcnpgettext = function (domain, msgctxt, msgid, msgid_plural, n, category) {
-    if (typeof(msgid) == 'undefined') return '';
+    if (! this.isValidObject(msgid)) return '';
 
-    var plural = (typeof(msgid_plural) == 'undefined') ? false : true;
-    var msg_ctxt_id = (typeof(msgctxt) == 'undefined') ? msgid :
-                                msgctxt+Gettext.context_glue+msgid;
+    var plural = this.isValidObject(msgid_plural);
+    var msg_ctxt_id = this.isValidObject(msgctxt) ? msgctxt+Gettext.context_glue+msgid : msgid;
 
-    var domainname = (typeof(domain) != 'undefined')      ? domain :
-                     (typeof(this.domain) != 'undefined') ? this.domain :
-                                                            'messages';
+    var domainname = this.isValidObject(domain)      ? domain :
+                     this.isValidObject(this.domain) ? this.domain :
+                                                       'messages';
 
     // category is always LC_MESSAGES. We ignore all else
     var category_name = 'LC_MESSAGES';
@@ -752,10 +947,10 @@ Gettext.prototype.dcnpgettext = function (domain, msgctxt, msgid, msgid_plural, 
 
     var locale_data = new Array();
     if (typeof(Gettext._locale_data) != 'undefined' &&
-        typeof(Gettext._locale_data[domainname]) != 'undefined') {
+        this.isValidObject(Gettext._locale_data[domainname])) {
         locale_data.push( Gettext._locale_data[domainname] );
 
-    } else {
+    } else if (typeof(Gettext._locale_data) != 'undefined') {
         // didn't find domain we're looking for. Search all of them.
         for (var dom in Gettext._locale_data) {
             locale_data.push( Gettext._locale_data[dom] );
@@ -768,7 +963,7 @@ Gettext.prototype.dcnpgettext = function (domain, msgctxt, msgid, msgid_plural, 
     if (locale_data.length) {
         for (var i=0; i<locale_data.length; i++) {
             var locale = locale_data[i];
-            if (typeof(locale.msgs[msg_ctxt_id]) != 'undefined') {
+            if (this.isValidObject(locale.msgs[msg_ctxt_id])) {
                 // make copy of that array (cause we'll be destructive)
                 for (var j=0; j<locale.msgs[msg_ctxt_id].length; j++) {
                     trans[j] = locale.msgs[msg_ctxt_id][j];
@@ -789,7 +984,7 @@ Gettext.prototype.dcnpgettext = function (domain, msgctxt, msgid, msgid_plural, 
     var translation = trans[0];
     if (plural) {
         var p;
-        if (found) {
+        if (found && this.isValidObject(domain_used.head.plural_func) ) {
             var rv = domain_used.head.plural_func(n);
             if (! rv.plural) rv.plural = 0;
             if (! rv.nplural) rv.nplural = 0;
@@ -799,7 +994,7 @@ Gettext.prototype.dcnpgettext = function (domain, msgctxt, msgid, msgid_plural, 
         } else {
             p = (n != 1) ? 1 : 0;
         }
-        if (typeof(trans[p]) != 'undefined')
+        if (this.isValidObject(trans[p]))
             translation = trans[p];
     }
 
@@ -807,9 +1002,140 @@ Gettext.prototype.dcnpgettext = function (domain, msgctxt, msgid, msgid_plural, 
 };
 
 
+/*
+
+=head2 strargs (string, arguement_array)
+
+  string : a string that potentially contains formatting characters.
+  arguement_array : an array of positional replacement values
+
+This is a utility method to provide some way to support positional parameters within a string, as javascript lacks a printf() method.
+
+The format is similar to printf(), but greatly simplified (ie. fewer features).
+
+Any percent signs followed by numbers are replaced with the corrosponding item from the B<arguement_array>.
+
+Example:
+
+    var string = "%2 roses are red, %1 violets are blue";
+    var args   = new Array("10", "15");
+    var result = Gettext.strargs(string, args);
+    // result is "15 roses are red, 10 violets are blue"
+
+The format numbers are 1 based, so the first itme is %1.
+
+A lone percent sign may be escaped by preceeding it with another percent sign.
+
+A percent sign followed by anything other than a number or another percent sign will be passed through as is.
+
+Some more examples should clear up any abmiguity. The following were called with the orig string, and the array as Array("[one]", "[two]") :
+
+  orig string "blah" becomes "blah"
+  orig string "" becomes ""
+  orig string "%%" becomes "%"
+  orig string "%%%" becomes "%%"
+  orig string "%%%%" becomes "%%"
+  orig string "%%%%%" becomes "%%%"
+  orig string "tom%%dick" becomes "tom%dick"
+  orig string "thing%1bob" becomes "thing[one]bob"
+  orig string "thing%1%2bob" becomes "thing[one][two]bob"
+  orig string "thing%1asdf%2asdf" becomes "thing[one]asdf[two]asdf"
+  orig string "%1%2%3" becomes "[one][two]"
+  orig string "tom%1%%2%aDick" becomes "tom[one]%2%aDick"
+
+This is especially useful when using plurals, as the string will nearly always contain the number.
+
+It's also useful in translated strings where the translator may have needed to move the position of the parameters.
+
+For example:
+
+  var count = 14;
+  Gettext.strargs( gt.ngettext('one banana', '%1 bananas', count), [count] );
+
+NOTE: this may be called as an instance method, or as a class method.
+
+  // instance method:
+  var gt = new Gettext(params);
+  gt.strargs(string, args);
+
+  // class method:
+  Gettext.strargs(string, args);
+
+=cut
+
+*/
+/* utility method, since javascript lacks a printf */
+Gettext.strargs = function (str, args) {
+    // make sure args is an array
+    if ( null == args ||
+         'undefined' == typeof(args) ) {
+        args = [];
+    } else if (args.constructor != Array) {
+        args = [args];
+    }
+
+    // NOTE: javascript lacks support for zero length negative look-behind
+    // in regex, so we must step through w/ index.
+    // The perl equiv would simply be:
+    //    $string =~ s/(?<!\%)\%([0-9]+)/$args[$1]/g;
+    //    $string =~ s/\%\%/\%/g; # restore escaped percent signs
+
+    var newstr = "";
+    while (true) {
+        var i = str.indexOf('%');
+        var match_n;
+
+        // no more found. Append whatever remains
+        if (i == -1) {
+            newstr += str;
+            break;
+        }
+
+        // we found it, append everything up to that
+        newstr += str.substr(0, i);
+
+        // check for escpaed %%
+        if (str.substr(i, 2) == '%%') {
+            newstr += '%';
+            str = str.substr((i+2));
+
+        // % followed by number
+        } else if ( match_n = str.substr(i).match(/^%(\d+)/) ) {
+            var arg_n = parseInt(match_n[1]);
+            var length_n = match_n[1].length;
+            if ( arg_n > 0 && args[arg_n -1] != null && typeof(args[arg_n -1]) != 'undefined' )
+                newstr += args[arg_n -1];
+            str = str.substr( (i + 1 + length_n) );
+
+        // % followed by some other garbage - just remove the %
+        } else {
+            newstr += '%';
+            str = str.substr((i+1));
+        }
+    }
+
+    return newstr;
+}
+
+/* instance method wrapper of strargs */
+Gettext.prototype.strargs = function (str, args) {
+    return Gettext.strargs(str, args);
+}
+
 /* verify that something is an array */
 Gettext.prototype.isArray = function (thisObject) {
     return this.isValidObject(thisObject) && thisObject.constructor == Array;
+};
+
+/* verify that an object exists and is valid */
+Gettext.prototype.isValidObject = function (thisObject) {
+    if (null == thisObject) {
+        return false;
+    } else if ('undefined' == typeof(thisObject) ) {
+        return false;
+    } else {
+        return true;
+    }
 };
 
 Gettext.prototype.sjax = function (uri) {
@@ -881,27 +1207,26 @@ It's still recommended to use the statically defined <script ...> method, which 
 
 =item domain support
 
-domain support. We need to figure out how we're going to handle that across the board.
+domain support while using shortcut methods like C<_('string')> or C<i18n('string')>.
 
-In CCMS, with the i18n calls, they currently do nothing to distinguish between domains. For that, saying "hey, it's all 'ccms'" may be ok (though zoneinfo would be nice to separate out).
+Under normal apps, the domain is usually set globally to the app, and a single language file is used. Under javascript, you may have multiple libraries or applications needing translation support, but the namespace is essentially global.
 
-In javascript, we run into a problem, because the namespace is essentially global. If we create a new i18n object, and use that, then that'd be ok... but that means a different calling convention than everthing else. The problem really lies with making the shortcuts ( _("str") or i18n("str") ).
+It's recommended that your app initialize it's own shortcut with it's own domain.  (See examples/wrapper/i18n.js for an example.)
 
-Maybe we can force our apps to do:
-    this.i18n("str")
-
-In our i18n wrapper lib, we could do the API like this:
+Basically, you'll want to accomplish something like this:
 
     // in some other .js file that needs i18n
     this.i18nObj = new i18n;
     this.i18n = this.i18nObj.init('domain');
+    // do translation
+    alert( this.i18n("string") );
 
-This really goes back to the crazy setup stuff that happens in all of these, and I'm basically trying to reinvent the wheel so it fits in javascript.
+If you use this raw Gettext object, then this is all handled for you, as you have your own object then, and will be calling C<myGettextObject.gettext('string')> and such.
 
 
 =item encoding
 
-May want to add encoding/reencoding stuff.
+May want to add encoding/reencoding stuff. See GNU iconv, or the perl module Locale::Recode from libintl-perl.
 
 =back
 
@@ -918,13 +1243,14 @@ This has been tested on the following browsers. It may work on others, but these
 
 =head1 REQUIRES
 
-po2json requires perl, and the perl modules Locale::PO and JSON.
+bin/po2json requires perl, and the perl modules Locale::PO and JSON.
 
 =head1 SEE ALSO
 
-Locale::gettext_pp(3pm), POSIX(3pm), gettext(1), gettext(3),
+bin/po2json (included),
 examples/normal/index.html,
-examples/wrapper/i18n.html, examples/wrapper/i18n.js
+examples/wrapper/i18n.html, examples/wrapper/i18n.js,
+Locale::gettext_pp(3pm), POSIX(3pm), gettext(1), gettext(3)
 
 =head1 AUTHOR
 
