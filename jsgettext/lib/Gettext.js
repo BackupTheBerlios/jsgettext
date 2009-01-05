@@ -45,7 +45,7 @@ Javascript Gettext - Javascript implemenation of GNU Gettext API.
 
  // //////////////////////////////////////////////////////////
  // The other way to load the language lookup is a "link" tag
- // Downside is that not all browser cache XMLHttpRequests the
+ // Downside is that not all browsers cache XMLHttpRequests the
  // same way, so caching of the language data isn't guarenteed
  // across page loads.
  // Upside is that it's easy to specify multiple files
@@ -1004,16 +1004,16 @@ Gettext.prototype.dcnpgettext = function (domain, msgctxt, msgid, msgid_plural, 
 
 /*
 
-=head2 strargs (string, arguement_array)
+=head2 strargs (string, argument_array)
 
   string : a string that potentially contains formatting characters.
-  arguement_array : an array of positional replacement values
+  argument_array : an array of positional replacement values
 
 This is a utility method to provide some way to support positional parameters within a string, as javascript lacks a printf() method.
 
 The format is similar to printf(), but greatly simplified (ie. fewer features).
 
-Any percent signs followed by numbers are replaced with the corrosponding item from the B<arguement_array>.
+Any percent signs followed by numbers are replaced with the corrosponding item from the B<argument_array>.
 
 Example:
 
