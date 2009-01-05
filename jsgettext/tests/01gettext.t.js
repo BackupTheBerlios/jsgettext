@@ -10,7 +10,7 @@ var json_locale_data = {
             'lang'          : 'en',
             'plural-forms'  : "nplurals=2; plural=(n != 1);"
             },
-        'test' : [ undefined, 'XXtestXX' ]
+        'test' : [ null, 'XXtestXX' ]
         }
     };  
     
