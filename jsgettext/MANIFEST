@@ -2,9 +2,12 @@ bin/po2json
 Changes
 COPYING.LESSER
 doc/html/Gettext.html
+doc/html/po2json.html
 doc/Makefile
 doc/pod/Gettext.pod
+doc/pod/po2json.pod
 doc/text/Gettext.text
+doc/text/po2json.text
 examples/normal/index.html
 examples/wrapper/i18n.html
 examples/wrapper/i18n.js
@@ -34,6 +37,7 @@ tests/02ngettext2.t.html
 tests/02ngettext.t.html
 tests/02npgettext.t.html
 tests/02pgettext.t.html
+tests/03strargs.t.html
 tests/index.html
 tests/LC_MESSAGES/01gettext_messages.json
 tests/LC_MESSAGES/01gettext_messages.po
