@@ -49,6 +49,15 @@ There are four ways to call this method:
 
 It will call the appropriate gettext, pgettext, ngettext, npgettext call on the backend for you.
 
+NOTE: if the string contains placeholders, you will still need to 
+perform substitution after the translation. For example:
+
+    Gettext.strargs( i18n('one ball', '%1 balls', number), number );
+
+This method could easily be extended/re-written to do that automaticcally,
+but how the substitution is handled (using %1, or %d, or {varname}, etc)
+is a touchy subject, so this is left up to your design decisions.
+
 =head1 BUILDING PO FILES
 
 You can extract these i18n strings with GNU Gettext's xgettext:
@@ -65,7 +74,6 @@ wrap.i18n.prototype.i18n = function(str1, str2, str3, str4) {
     if (! this.gt)
         throw new Error("i18n not initialized");
 
-        alert([str1, str2, str3, str4]);
     var n, context, singular, plural;
     if (typeof(str4) != 'undefined') {
         // number, context, singular, plural

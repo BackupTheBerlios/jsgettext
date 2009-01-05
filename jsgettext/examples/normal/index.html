@@ -27,6 +27,10 @@
     translations.push('translation of 1 bananas (with context): '+gt.npgettext("the fruit", "one banana", "%n bananas", 1));
     translations.push('translation of 2 bananas (with context): '+gt.npgettext("the fruit", "one banana", "%n bananas", 2));
 
+    translations.push('strargs with gettext (0): '+Gettext.strargs( gt.ngettext('foo has one bar', 'foo has %1 bars', 0), 0));
+    translations.push('strargs with gettext (1): '+Gettext.strargs( gt.ngettext('foo has one bar', 'foo has %1 bars', 1), 1));
+    translations.push('strargs with gettext (2): '+Gettext.strargs( gt.ngettext('foo has one bar', 'foo has %1 bars', 2), 2));
+
     alert("example translations:\n"+translations.join("\n"));
 // --></script>
 </head>

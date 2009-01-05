@@ -26,6 +26,9 @@
     translations.push('translation of 1 bananas (with context): '+i18n(1, "the fruit", "one banana", "%n bananas"));
     translations.push('translation of 2 bananas (with context): '+i18n(2, "the fruit", "one banana", "%n bananas"));
 
+    translations.push('strargs with gettext (0): '+Gettext.strargs( i18n(0, 'foo has one bar', 'foo has %1 bars'), 0));
+    translations.push('strargs with gettext (1): '+Gettext.strargs( i18n(1, 'foo has one bar', 'foo has %1 bars'), 1));
+    translations.push('strargs with gettext (2): '+Gettext.strargs( i18n(2, 'foo has one bar', 'foo has %1 bars'), 2));
 
     alert("example translations:\n"+translations.join("\n"));
 // --></script>
