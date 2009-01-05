@@ -1,12 +1,14 @@
 .PHONY: all clean install
 
 SOURCE=../lib/Gettext.js
+PO2JSONSOURCE=../bin/po2json
 DEMO=../examples/normal/index.html
 PREFIX?=/home/groups/jsgettext
 
 TEST_FILES:=$(shell find ../tests -path "*/CVS" -prune -o ! -name ".*" -print)
 
-all:htdocs/doc/html/Gettext.html htdocs/lib/Gettext.js htdocs/demo/index.html htdocs/tests
+all:htdocs/doc/html/Gettext.html htdocs/doc/html/po2json.html \
+	htdocs/lib/Gettext.js htdocs/demo/index.html htdocs/tests
 
 install: $(PREFIX) all
 	find htdocs -path "*/CVS" -prune -o ! -name ".*" -print | \
@@ -24,6 +26,10 @@ htdocs/lib/Gettext.js: $(SOURCE) htdocs/lib
 	cp $< $@
 
 htdocs/doc/html/Gettext.html: $(SOURCE) htdocs/doc/html
+	pod2html $< > $@
+	rm pod2htm*.tmp
+
+htdocs/doc/html/po2json.html: $(PO2JSONSOURCE) htdocs/doc/html
 	pod2html $< > $@
 	rm pod2htm*.tmp
 
