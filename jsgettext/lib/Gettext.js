@@ -971,13 +971,15 @@ Gettext.prototype.dcnpgettext = function (domain, msgctxt, msgid, msgid_plural, 
                 trans.shift(); // throw away the msgid_plural
                 domain_used = locale;
                 found = true;
-                break;
+                // only break if found translation actually has a translation.
+                if ( trans.length > 0 && trans[0].length != 0 )
+                    break;
             }
         }
     }
 
-    // default to english if we lack a match
-    if (! trans.length) {
+    // default to english if we lack a match, or match has zero length
+    if ( trans.length == 0 || trans[0].length == 0 ) {
         trans = [ msgid, msgid_plural ];
     }
 
