@@ -19,5 +19,7 @@ is(gt.gettext('test singular'), 'XXtestXX', "test translation is XXtestXX");
 
 is(gt.gettext('Not translated'), 'Not translated', "untranslated strings pass through");
 
+is(gt.gettext('zero length translation'), 'zero length translation', "strings existing in po with zero length translations pass through untrasnlated message");
+
 </script></pre>
 </body>
