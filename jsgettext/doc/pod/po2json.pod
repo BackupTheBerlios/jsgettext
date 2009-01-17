@@ -50,5 +50,4 @@ The above is removing the first linebreak. I don't know if that is significant. 
 Copyright (C) 2008, Joshua I. Miller E<lt>unrtst@cpan.orgE<gt>, all rights reserved. See the source code for details.
 
 
-__END__
 

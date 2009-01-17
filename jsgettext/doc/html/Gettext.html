@@ -36,7 +36,7 @@
 		<li><a href="#npgettext__msgctxt__msgid__msgid_plural__count__">npgettext( MSGCTXT, MSGID, MSGID_PLURAL, COUNT )</a></li>
 		<li><a href="#dnpgettext__textdomain__msgctxt__msgid__msgid_plural__count__">dnpgettext( TEXTDOMAIN, MSGCTXT, MSGID, MSGID_PLURAL, COUNT )</a></li>
 		<li><a href="#dcnpgettext__textdomain__msgctxt__msgid__msgid_plural__count__category__">dcnpgettext( TEXTDOMAIN, MSGCTXT, MSGID, MSGID_PLURAL, COUNT, CATEGORY )</a></li>
-		<li><a href="#strargs__string__arguement_array_">strargs (string, arguement_array)</a></li>
+		<li><a href="#strargs__string__argument_array_">strargs (string, argument_array)</a></li>
 	</ul>
 
 	<li><a href="#notes">NOTES</a></li>
@@ -79,7 +79,7 @@
 <pre>
  // //////////////////////////////////////////////////////////
  // The other way to load the language lookup is a &quot;link&quot; tag
- // Downside is that not all browser cache XMLHttpRequests the
+ // Downside is that not all browsers cache XMLHttpRequests the
  // same way, so caching of the language data isn't guarenteed
  // across page loads.
  // Upside is that it's easy to specify multiple files
@@ -414,13 +414,13 @@ textdomain instead of the default domain.</p>
 category, instead of the default category <code>LC_MESSAGES</code>.</p>
 <p>
 </p>
-<h2><a name="strargs__string__arguement_array_">strargs (string, arguement_array)</a></h2>
+<h2><a name="strargs__string__argument_array_">strargs (string, argument_array)</a></h2>
 <pre>
   string : a string that potentially contains formatting characters.
-  arguement_array : an array of positional replacement values</pre>
+  argument_array : an array of positional replacement values</pre>
 <p>This is a utility method to provide some way to support positional parameters within a string, as javascript lacks a <code>printf()</code> method.</p>
 <p>The format is similar to printf(), but greatly simplified (ie. fewer features).</p>
-<p>Any percent signs followed by numbers are replaced with the corrosponding item from the <strong>arguement_array</strong>.</p>
+<p>Any percent signs followed by numbers are replaced with the corrosponding item from the <strong>argument_array</strong>.</p>
 <p>Example:</p>
 <pre>
     var string = &quot;%2 roses are red, %1 violets are blue&quot;;

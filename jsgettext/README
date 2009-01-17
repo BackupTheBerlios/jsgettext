@@ -23,7 +23,7 @@ SYNOPSIS
 
      // //////////////////////////////////////////////////////////
      // The other way to load the language lookup is a "link" tag
-     // Downside is that not all browser cache XMLHttpRequests the
+     // Downside is that not all browsers cache XMLHttpRequests the
      // same way, so caching of the language data isn't guarenteed
      // across page loads.
      // Upside is that it's easy to specify multiple files
@@ -374,9 +374,9 @@ METHODS
     Like dnpgettext() but retrieves the translation from the specified
     category, instead of the default category "LC_MESSAGES".
 
-  strargs (string, arguement_array)
+  strargs (string, argument_array)
       string : a string that potentially contains formatting characters.
-      arguement_array : an array of positional replacement values
+      argument_array : an array of positional replacement values
 
     This is a utility method to provide some way to support positional
     parameters within a string, as javascript lacks a printf() method.
@@ -385,7 +385,7 @@ METHODS
     features).
 
     Any percent signs followed by numbers are replaced with the
-    corrosponding item from the arguement_array.
+    corrosponding item from the argument_array.
 
     Example:
 
