@@ -14,4 +14,7 @@ msgstr ""
 
 msgid "test"
 msgstr "XXtestXX"
-  
+
+msgid "test with \"embedded\" quotes"
+msgstr "XXtest with \"embedded\" quotesXX"
+

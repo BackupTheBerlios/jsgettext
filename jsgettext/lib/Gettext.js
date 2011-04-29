@@ -591,7 +591,8 @@ Gettext.prototype.parse_po_dequote = function(str) {
     if (match = str.match(/^"(.*)"/)) {
         str = match[1];
     }
-    str = str.replace(/\\"/, "");
+    // unescale all embedded quotes (fixes bug #17504)
+    str = str.replace(/\\"/g, "\"");
     return str;
 };
 
