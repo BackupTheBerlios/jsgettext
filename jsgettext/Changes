@@ -1,3 +1,6 @@
+2011-04-29      v0.08
+- BUMP: forgot to bump version in META.yml. Bumping to make new release.
+
 2011-04-29      v0.07
 - BUGFIX: po files with embedded quotes in messages failed to parse
           correctly. Thanks to "arenevier" for the fix. Added tests
